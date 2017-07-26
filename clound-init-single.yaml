@@ -305,7 +305,7 @@ template:
                      - sudo pip install 'cffi>=1.6.0'
                      - sudo pip install 'pyOpenSSL>=16.2.0'
 
-                     - sudo /tmp/salt_install.sh
+                     # - sudo /tmp/salt_install.sh
 
                      # Node is ready, allow SSH access
                      - sudo iptables -D INPUT -p tcp --dport 22 -j DROP
