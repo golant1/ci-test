@@ -5,12 +5,16 @@ n = new com.mirantis.mk.Common()
  * Creates env according to input params by DevOps tool
  * 
  * @param path Path to dos.py 
+ * @param work_dir path where devops is installed
  * @param type Path to template having been created
  */
-def createDevOpsEnv(path, tpl){
+def createDevOpsEnv(path, work_dir, tpl){
     echo "${path} ${tpl}"
     return sh(script:"""
     export ENV_NAME=${params.ENV_NAME} &&
+    export WORKING_DIR=${$work_dir} &&
+    export DEVOPS_DB_NAME=$WORKING_DIR/fuel-devops.sqlite &&
+    export DEVOPS_DB_ENGINE=django.db.backends.sqlite3 && 
     ${path} create-env ${tpl}
     """, returnStdout: true)
 }
@@ -64,7 +68,8 @@ def ifEnvIsReady(envip){
 
 
 node {
-    devops_path = '/var/fuel-devops-venv/fuel-devops-venv/bin/dos.py'
+    devops_dos_path = '/var/fuel-devops-venv/fuel-devops-venv/bin/dos.py'
+    devops_work_dir = '/var/fuel-devops-venv'
     stage ('Creating environmet') {
         if ("${params.ENV_NAME}" == '') {
             error("ENV_NAME have to be defined")
@@ -77,7 +82,7 @@ node {
             echo "Multi"
         }
         try {
-            createDevOpsEnv("${devops_path}","${tpl}")
+            createDevOpsEnv("${devops_dos_path}","${working_dir}","${tpl}")
         } catch (err) {
             error("${err}")
 //            eraseDevOpsEnv("${params.ENV_NAME}")   
@@ -85,14 +90,14 @@ node {
     }
      stage ('Bringing up the environment') {
         try {
-            startupDevOpsEnv("${devops_path}","${params.ENV_NAME}")
+            startupDevOpsEnv("${devops_dos_path}","${params.ENV_NAME}")
         } catch (err) {
             error("${params.ENV_NAME} has not been managed to bring up")
         }
      }
      stage ('Getting environment IP') {
         try {
-            envip = getDevOpsIP("${devops_path}","${params.ENV_NAME}").trim()
+            envip = getDevOpsIP("${devops_dos_path}","${params.ENV_NAME}").trim()
             echo "${envip}"
         } catch (err) {
             error("IP of the env ${params.ENV_NAME} can't be got")
