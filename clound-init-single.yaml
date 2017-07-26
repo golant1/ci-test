@@ -181,7 +181,6 @@ template:
                             reclass_branch='master'
                             reclass_address='https://gerrit.mcp.mirantis.net/salt-models/mcp-virtual-lab'
 
-                            set -x
                             echo "Configuring reclass ..."
                             ssh-keyscan -H github.com >> ~/.ssh/known_hosts
                             if echo $reclass_branch | egrep -q "^refs"; then
@@ -290,7 +289,6 @@ template:
                             salt-call --no-color state.sls salt.api,salt.minion.ca -l info
                             systemctl restart salt-minion
 
-                            set +x
 
                     runcmd:
                      # Prepare network connection
