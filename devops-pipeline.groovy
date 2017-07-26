@@ -82,7 +82,7 @@ node {
             echo "Multi"
         }
         try {
-            createDevOpsEnv("${devops_dos_path}","${working_dir}","${tpl}")
+            createDevOpsEnv("${devops_dos_path}","${devops_work_dir}","${tpl}")
         } catch (err) {
             error("${err}")
 //            eraseDevOpsEnv("${params.ENV_NAME}")   
