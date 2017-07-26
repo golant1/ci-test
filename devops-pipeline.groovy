@@ -33,10 +33,15 @@ def eraseDevOpsEnv(path, env){
  * Starts the env 
  * 
  * @param path Path to dos.py 
+ * @param work_dir path where devops is installed
  * @param env name of the ENV have to be brought up 
   */
-def startupDevOpsEnv(path, env){
+def startupDevOpsEnv(path, work_dir, env){
     return sh(script:"""
+    export ENV_NAME=${params.ENV_NAME} &&
+    export WORKING_DIR=${work_dir} &&
+    export DEVOPS_DB_NAME=${work_dir}/fuel-devops.sqlite &&
+    export DEVOPS_DB_ENGINE=django.db.backends.sqlite3 && 
     ${path} start ${env}
     """, returnStdout: true)
 }
@@ -45,10 +50,15 @@ def startupDevOpsEnv(path, env){
  * Get env IP 
  * 
  * @param path Path to dos.py 
+ * @param work_dir path where devops is installed
  * @param env name of the ENV to find out IP 
   */
-def getDevOpsIP(path, env){
+def getDevOpsIP(path, work_dir, env){
     return sh(script:"""
+    export ENV_NAME=${params.ENV_NAME} &&
+    export WORKING_DIR=${work_dir} &&
+    export DEVOPS_DB_NAME=${work_dir}/fuel-devops.sqlite &&
+    export DEVOPS_DB_ENGINE=django.db.backends.sqlite3 && 
     ${path} slave-ip-list --address-pool-name public-pool01 --ip-only ${env}
     """, returnStdout: true)
 }
@@ -90,14 +100,14 @@ node {
     }
      stage ('Bringing up the environment') {
         try {
-            startupDevOpsEnv("${devops_dos_path}","${params.ENV_NAME}")
+            startupDevOpsEnv("${devops_dos_path}","${devops_work_dir}","${params.ENV_NAME}")
         } catch (err) {
             error("${params.ENV_NAME} has not been managed to bring up")
         }
      }
      stage ('Getting environment IP') {
         try {
-            envip = getDevOpsIP("${devops_dos_path}","${params.ENV_NAME}").trim()
+            envip = getDevOpsIP("${devops_dos_path}","${devops_work_dir}","${params.ENV_NAME}").trim()
             echo "${envip}"
         } catch (err) {
             error("IP of the env ${params.ENV_NAME} can't be got")
