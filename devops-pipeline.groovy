@@ -12,7 +12,7 @@ def createDevOpsEnv(path, work_dir, tpl){
     echo "${path} ${tpl}"
     return sh(script:"""
     export ENV_NAME=${params.ENV_NAME} &&
-    export WORKING_DIR=${$work_dir} &&
+    export WORKING_DIR=${work_dir} &&
     export DEVOPS_DB_NAME=$WORKING_DIR/fuel-devops.sqlite &&
     export DEVOPS_DB_ENGINE=django.db.backends.sqlite3 && 
     ${path} create-env ${tpl}
