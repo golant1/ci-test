@@ -157,8 +157,8 @@ timestamps {
 
             def saltMaster
             stage('Connect to Salt API') {
-                saltMaster = salt.connection(SALT_MASTER_URL, SALT_MASTER_CREDENTIALS)
                 echo "${SALT_MASTER_URL} ${SALT_MASTER_CREDENTIALS}"
+                saltMaster = salt.connection(SALT_MASTER_URL, SALT_MASTER_CREDENTIALS)
             }
 
             //
