@@ -71,6 +71,7 @@ def ifEnvIsReady(envip){
             nc -z -w 30 ${envip} 22
             """, returnStdout: true)
         }
+        common.successMsg("The env with IP ${envip} has been started")
     } else {
         echo "It seems the env has not been started properly"
     }    
