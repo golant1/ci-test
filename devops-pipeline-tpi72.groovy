@@ -77,7 +77,7 @@ def ifEnvIsReady(envip){
 }
 
 
-node {
+node('tpi72') {
     devops_dos_path = '/var/fuel-devops-venv/fuel-devops-venv/bin/dos.py'
     devops_work_dir = '/var/fuel-devops-venv'
     stage ('Creating environmet') {
