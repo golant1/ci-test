@@ -5,7 +5,8 @@ common = new com.mirantis.mk.Common()
 * TEMPLATE              There are two templates are available for one-node installation and two-node (Single or Multi)
 * DESTROY_ENV           To shutdown env once job is finished
 * DEPLOY_OPENSTACK      if set True OpenStack will be deployed
-*
+* SLAVE_NODE            The node where VM is going to be created
+* JOB_DEP_NAME          The node where VM is going to be created
 */
 
 
@@ -102,7 +103,7 @@ def ifEnvIsReady(envip){
 }
 
 
-node {
+node ("${SLAVE_NODE}") {
     devops_dos_path = '/var/fuel-devops-venv/fuel-devops-venv/bin/dos.py'
     devops_work_dir = '/var/fuel-devops-venv'
     def dt = new Date().getTime()
@@ -145,7 +146,7 @@ node {
         ifEnvIsReady("${envip}")
         if (DEPLOY_OPENSTACK.toBoolean() == true) {
             stage ('Deploying Openstack') {
-                build(job: "deploy-heat-virtual_mcp11_aio", parameters: [
+                build(job: "${JOB_DEP_NAME}", parameters: [
                     [$class: 'StringParameterValue', name: 'TEST_TEMPEST_IMAGE', value: "sandriichenko/rally_tempest_docker:docker_aio"],
                     [$class: 'StringParameterValue', name: 'TEST_TEMPEST_PATTERN', value: "set=smoke"],
                     [$class: 'StringParameterValue', name: 'TEST_TEMPEST_TARGET', value: "I@salt:master"],
