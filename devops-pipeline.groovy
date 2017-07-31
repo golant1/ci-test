@@ -136,7 +136,7 @@ node ("${SLAVE_NODE}") {
     }
     stage ('Getting environment IP') {
        try {
-           envip = getDevOpsIP("${devops_dos_path}","${devops_work_dir}","${params.ENV_NAME}").trim()
+           envip = getDevOpsIP("${devops_dos_path}","${devops_work_dir}","${envname}").trim()
            echo "${envip}"
        } catch (err) {
            error("IP of the env ${envname} can't be got")
