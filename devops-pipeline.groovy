@@ -37,6 +37,10 @@ def createDevOpsEnv(path, work_dir, tpl, envname){
 def eraseDevOpsEnv(path, env){
     echo "${env} will be erased"
     return sh(script:"""
+    export ENV_NAME=${env} &&
+    export WORKING_DIR=${work_dir} &&
+    export DEVOPS_DB_NAME=${work_dir}/fuel-devops.sqlite &&
+    export DEVOPS_DB_ENGINE=django.db.backends.sqlite3 && 
     ${path} erase ${env}
     """, returnStdout: true)
 }
@@ -48,8 +52,11 @@ def eraseDevOpsEnv(path, env){
  * @param env name of the ENV have to be deleted 
   */
 def destroyDevOpsEnv(path, env){
-    echo "${env} will be erased"
     return sh(script:"""
+    export ENV_NAME=${env} &&
+    export WORKING_DIR=${work_dir} &&
+    export DEVOPS_DB_NAME=${work_dir}/fuel-devops.sqlite &&
+    export DEVOPS_DB_ENGINE=django.db.backends.sqlite3 && 
     ${path} destroy ${env}
     """, returnStdout: true)    
 }
