@@ -59,7 +59,7 @@ test = new com.mirantis.mk.Test()
 _MAX_PERMITTED_STACKS = 2
 
 timestamps {
-    node ('tpi77'){
+    node (){
         // try to get STACK_INSTALL or fallback to INSTALL if exists
         try {
           def temporary = STACK_INSTALL
