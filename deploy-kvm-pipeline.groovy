@@ -169,7 +169,7 @@ node ("${SLAVE_NODE}") {
         if (DESTROY_ENV.toBoolean() == true) {
              stage ('Bringing down ${envname} environmnet') {
                  try {
-                     destroyDevOpsEnv("${devops_path}","${envname}")
+                     destroyDevOpsEnv("${devops_dos_path}","${envname}")
                  } catch (err) {
                      error("${envname} has not been managed to bring down")
                  }
