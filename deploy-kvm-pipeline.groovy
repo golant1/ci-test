@@ -49,7 +49,7 @@ def eraseDevOpsEnv(path, env){
  * Shutdown the env 
  *
  * @param path Path to dos.py  
- * @param env name of the ENV have to be deleted 
+ * @param env name of the ENV have to be destroyed 
   */
 def destroyDevOpsEnv(path, env){
     return sh(script:"""
