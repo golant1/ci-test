@@ -49,7 +49,7 @@ def eraseDevOpsEnv(path, env){
  * Shutdown the env 
  *
  * @param path Path to dos.py  
- * @param env name of the ENV have to be deleted 
+ * @param env name of the ENV have to be destroyed 
   */
 def destroyDevOpsEnv(path, env){
     return sh(script:"""
@@ -145,6 +145,7 @@ node ("${SLAVE_NODE}") {
        try {
            envip = getDevOpsIP("${devops_dos_path}","${devops_work_dir}","${envname}").trim()
            echo "${envip}"
+           currentBuild.description = "${envname} ${saltMasterHost}"
        } catch (err) {
            error("IP of the env ${envname} can't be got")
        }                
