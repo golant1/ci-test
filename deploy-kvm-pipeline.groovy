@@ -145,7 +145,7 @@ node ("${SLAVE_NODE}") {
        try {
            envip = getDevOpsIP("${devops_dos_path}","${devops_work_dir}","${envname}").trim()
            echo "${envip}"
-           currentBuild.description = "${envname} ${saltMasterHost}"
+           currentBuild.description = "${envname} ${envip}"
        } catch (err) {
            error("IP of the env ${envname} can't be got")
        }                
