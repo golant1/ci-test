@@ -17,10 +17,10 @@ common = new com.mirantis.mk.Common()
  * @param work_dir path where devops is installed
  * @param type Path to template having been created
  */
-def createDevOpsEnv(path, work_dir, tpl, envname){
+def createDevOpsEnv(path, work_dir, tpl, env){
 //    echo "${path} ${tpl}"
     return sh(script:"""
-    export ENV_NAME=${envname} &&
+    export ENV_NAME=${env} &&
     export WORKING_DIR=${work_dir} &&
     export DEVOPS_DB_NAME=${work_dir}/fuel-devops.sqlite &&
     export DEVOPS_DB_ENGINE=django.db.backends.sqlite3 && 
@@ -70,7 +70,7 @@ def destroyDevOpsEnv(path, env){
   */
 def startupDevOpsEnv(path, work_dir, env){
     return sh(script:"""
-    export ENV_NAME=${params.ENV_NAME} &&
+    export ENV_NAME=${env} &&
     export WORKING_DIR=${work_dir} &&
     export DEVOPS_DB_NAME=${work_dir}/fuel-devops.sqlite &&
     export DEVOPS_DB_ENGINE=django.db.backends.sqlite3 && 
@@ -87,7 +87,7 @@ def startupDevOpsEnv(path, work_dir, env){
   */
 def getDevOpsIP(path, work_dir, env){
     return sh(script:"""
-    export ENV_NAME=${params.ENV_NAME} &&
+    export ENV_NAME=${env} &&
     export WORKING_DIR=${work_dir} &&
     export DEVOPS_DB_NAME=${work_dir}/fuel-devops.sqlite &&
     export DEVOPS_DB_ENGINE=django.db.backends.sqlite3 && 
