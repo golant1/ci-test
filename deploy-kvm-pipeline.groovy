@@ -155,16 +155,19 @@ node ("${SLAVE_NODE}") {
         if (DEPLOY_OPENSTACK.toBoolean() == true) {
             stage ('Deploying Openstack') {
                 build(job: "${JOB_DEP_NAME}", parameters: [
+                    [$class: 'StringParameterValue', name: 'SALT_MASTER_CREDENTIALS', value: SALT_MASTER_CREDENTIALS],
+                    [$class: 'StringParameterValue', name: 'SALT_MASTER_URL', value: "http://${envip}:6969"],
+                    [$class: 'StringParameterValue', name: 'STACK_INSTALL', value: STACK_INSTALL],
+                    [$class: 'StringParameterValue', name: 'STACK_TEST', value: ''],                 
+                    [$class: 'StringParameterValue', name: 'STACK_TYPE', value: "physical"],
+                    [$class: 'TextParameterValue', name: 'SALT_OVERRIDES', value: SALT_OVERRIDES]
+                ])
+            }
+/*
                     [$class: 'StringParameterValue', name: 'TEST_TEMPEST_IMAGE', value: "sandriichenko/rally_tempest_docker:docker_aio"],
                     [$class: 'StringParameterValue', name: 'TEST_TEMPEST_PATTERN', value: "set=smoke"],
                     [$class: 'StringParameterValue', name: 'TEST_TEMPEST_TARGET', value: "I@salt:master"],
-                    [$class: 'StringParameterValue', name: 'SALT_MASTER_CREDENTIALS', value: "salt-qa-credentials"],
-                    [$class: 'StringParameterValue', name: 'SALT_MASTER_URL', value: "http://${envip}:6969"],
-                    [$class: 'StringParameterValue', name: 'STACK_INSTALL', value: "openstack"],
-                    [$class: 'StringParameterValue', name: 'STACK_TEST', value: "openstack"],                 
-                    [$class: 'StringParameterValue', name: 'STACK_TYPE', value: "physical"]
-                ])
-            }
+*/            
         }
         if (DESTROY_ENV.toBoolean() == true) {
              stage ('Bringing down ${envname} environmnet') {
