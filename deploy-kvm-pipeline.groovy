@@ -157,7 +157,6 @@ node ("${SLAVE_NODE}") {
                 build(job: "${JOB_DEP_NAME}", parameters: [
                     [$class: 'StringParameterValue', name: 'SALT_MASTER_URL', value: "http://${envip}:6969"],
                     [$class: 'StringParameterValue', name: 'STACK_INSTALL', value: STACK_INSTALL],
-                    [$class: 'StringParameterValue', name: 'STACK_TEST', value: ''],                 
                     [$class: 'StringParameterValue', name: 'STACK_TYPE', value: "physical"],
                     [$class: 'TextParameterValue', name: 'SALT_OVERRIDES', value: SALT_OVERRIDES]
                 ])
