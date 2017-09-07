@@ -155,7 +155,6 @@ node ("${SLAVE_NODE}") {
         if (DEPLOY_OPENSTACK.toBoolean() == true) {
             stage ('Deploying Openstack') {
                 build(job: "${JOB_DEP_NAME}", parameters: [
-                    [$class: 'StringParameterValue', name: 'SALT_MASTER_CREDENTIALS', value: SALT_MASTER_CREDENTIALS],
                     [$class: 'StringParameterValue', name: 'SALT_MASTER_URL', value: "http://${envip}:6969"],
                     [$class: 'StringParameterValue', name: 'STACK_INSTALL', value: STACK_INSTALL],
                     [$class: 'StringParameterValue', name: 'STACK_TEST', value: ''],                 
