@@ -113,7 +113,7 @@ def ifEnvIsReady(envip){
 node ("${SLAVE_NODE}") {
     devops_dos_path = '/var/fuel-devops-venv/fuel-devops-venv/bin/dos.py'
     devops_work_dir = '/var/fuel-devops-venv'
-    if (STACK_NAME != "") {
+    if (CREATE_ENV.toBoolean() == true) {
 
       def dt = new Date().getTime()
       def envname = "${params.STACK_NAME}-${dt}"
@@ -171,7 +171,7 @@ node ("${SLAVE_NODE}") {
           }
       }
 
-    } else if (DESTROY_ENV.toBoolean() == true && STACK_NAME == "") {
+    } else if (DESTROY_ENV.toBoolean() == true) {
               stage ('Bringing down ${envname} environmnet') {
                 try {
                   destroyDevOpsEnv("${devops_dos_path}","${envname}")
