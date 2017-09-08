@@ -180,7 +180,7 @@ node ("${SLAVE_NODE}") {
                     destroyDevOpsEnv("${devops_dos_path}","${envname}")
                   }
                 } catch (err) {
-                    error("${envname} has not been managed to bring down")
+                    error("The env has not been managed to bring down")
                 }
               }
     }
