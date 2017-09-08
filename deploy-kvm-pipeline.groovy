@@ -34,7 +34,7 @@ def createDevOpsEnv(path, work_dir, tpl, env){
  * @param path Path to dos.py  
  * @param env name of the ENV have to be deleted 
   */
-def eraseDevOpsEnv(path, env){
+def eraseDevOpsEnv(path, work_dir, env){
     echo "${env} will be erased"
     return sh(script:"""
     export ENV_NAME=${env} &&
@@ -51,7 +51,7 @@ def eraseDevOpsEnv(path, env){
  * @param path Path to dos.py  
  * @param env name of the ENV have to be destroyed 
   */
-def destroyDevOpsEnv(path, env){
+def destroyDevOpsEnv(path, work_dir, env){
     return sh(script:"""
     export ENV_NAME=${env} &&
     export WORKING_DIR=${work_dir} &&
@@ -113,10 +113,12 @@ def ifEnvIsReady(envip){
 node ("${SLAVE_NODE}") {
     devops_dos_path = '/var/fuel-devops-venv/fuel-devops-venv/bin/dos.py'
     devops_work_dir = '/var/fuel-devops-venv'
+    def envname
+
     if (CREATE_ENV.toBoolean() == true) {
 
       def dt = new Date().getTime()
-      def envname = "${params.STACK_NAME}-${dt}"
+      envname = "${params.STACK_NAME}-${dt}"
     
       stage ('Creating environmet') {
           if ("${params.STACK_NAME}" == '') {
@@ -172,15 +174,15 @@ node ("${SLAVE_NODE}") {
       }
 
     } else if (DESTROY_ENV.toBoolean() == true) {
-              stage ('Bringing down ${envname} environmnet') {
+              stage ('Bringing down environmnet') {
                 try {
-                  if ("${envname}" == "") {
-                    destroyDevOpsEnv("${devops_dos_path}",STACK_NAME)
+                  if ("${envname}") {
+                    destroyDevOpsEnv("${devops_dos_path}","${devops_work_dir}",STACK_NAME)
                   } else {
-                    destroyDevOpsEnv("${devops_dos_path}","${envname}")
+                    destroyDevOpsEnv("${devops_dos_path}","${devops_work_dir}","${envname}")
                   }
-                } catch (err) {
-                    error("The env has not been managed to bring down")
+                } catch (Exception e) {
+                    throw e
                 }
               }
     }
