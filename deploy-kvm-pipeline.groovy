@@ -113,70 +113,72 @@ def ifEnvIsReady(envip){
 node ("${SLAVE_NODE}") {
     devops_dos_path = '/var/fuel-devops-venv/fuel-devops-venv/bin/dos.py'
     devops_work_dir = '/var/fuel-devops-venv'
-    def dt = new Date().getTime()
-    def envname = "${params.STACK_NAME}-${dt}"
+    if (STACK_NAME != "") {
+
+      def dt = new Date().getTime()
+      def envname = "${params.STACK_NAME}-${dt}"
     
-    stage ('Creating environmet') {
-        if ("${params.STACK_NAME}" == '') {
-            error("ENV_NAME have to be defined")
-        }
-        echo "${params.STACK_NAME} ${params.TEMPLATE}"
-        if ("${params.TEMPLATE}" == 'Single') {
-            echo "Single"
-            tpl = '/var/fuel-devops-venv/tpl/clound-init-single.yaml'
-        } else if ("${params.TEMPLATE}" == 'Multi') {
-            echo "Multi"
-        }
-        try {
-            createDevOpsEnv("${devops_dos_path}","${devops_work_dir}","${tpl}","${envname}")
-        } catch (err) {
-            error("${err}")
+      stage ('Creating environmet') {
+          if ("${params.STACK_NAME}" == '') {
+              error("ENV_NAME have to be defined")
+          }
+          echo "${params.STACK_NAME} ${params.TEMPLATE}"
+          if ("${params.TEMPLATE}" == 'Single') {
+              echo "Single"
+              tpl = '/var/fuel-devops-venv/tpl/clound-init-single.yaml'
+          } else if ("${params.TEMPLATE}" == 'Multi') {
+              echo "Multi"
+          }
+          try {
+              createDevOpsEnv("${devops_dos_path}","${devops_work_dir}","${tpl}","${envname}")
+          } catch (err) {
+              error("${err}")
 //            eraseDevOpsEnv("${params.ENV_NAME}")   
-        }
-    }
-    stage ('Bringing up the environment') {
-       try {
-           startupDevOpsEnv("${devops_dos_path}","${devops_work_dir}","${envname}")
-       } catch (err) {
-           error("${params.STACK_NAME} has not been managed to bring up")
-       }
-    }
-    stage ('Getting environment IP') {
-       try {
-           envip = getDevOpsIP("${devops_dos_path}","${devops_work_dir}","${envname}").trim()
-           echo "${envip}"
-           currentBuild.description = "${envname} ${envip}"
-       } catch (err) {
-           error("IP of the env ${envname} can't be got")
-       }                
-    }
-    stage ('Checking whether the env has finished starting') {
-        ifEnvIsReady("${envip}")
-        if (DEPLOY_OPENSTACK.toBoolean() == true) {
-            stage ('Deploying Openstack') {
-                build(job: "${JOB_DEP_NAME}", parameters: [
-                    [$class: 'StringParameterValue', name: 'SALT_MASTER_URL', value: "http://${envip}:6969"],
-                    [$class: 'StringParameterValue', name: 'STACK_INSTALL', value: STACK_INSTALL],
-                    [$class: 'StringParameterValue', name: 'STACK_TYPE', value: "physical"],
-                    [$class: 'TextParameterValue', name: 'SALT_OVERRIDES', value: SALT_OVERRIDES]
-                ])
-            }
+          }
+      }
+      stage ('Bringing up the environment') {
+         try {
+             startupDevOpsEnv("${devops_dos_path}","${devops_work_dir}","${envname}")
+         } catch (err) {
+             error("${params.STACK_NAME} has not been managed to bring up")
+         }
+      }
+      stage ('Getting environment IP') {
+         try {
+             envip = getDevOpsIP("${devops_dos_path}","${devops_work_dir}","${envname}").trim()
+             echo "${envip}"
+             currentBuild.description = "${envname} ${envip}"
+         } catch (err) {
+             error("IP of the env ${envname} can't be got")
+         }                
+      }
+      stage ('Checking whether the env has finished starting') {
+          ifEnvIsReady("${envip}")
+          if (DEPLOY_OPENSTACK.toBoolean() == true) {
+              stage ('Deploying Openstack') {
+                  build(job: "${JOB_DEP_NAME}", parameters: [
+                      [$class: 'StringParameterValue', name: 'SALT_MASTER_URL', value: "http://${envip}:6969"],
+                      [$class: 'StringParameterValue', name: 'STACK_INSTALL', value: STACK_INSTALL],
+                      [$class: 'StringParameterValue', name: 'STACK_TYPE', value: "physical"],
+                      [$class: 'TextParameterValue', name: 'SALT_OVERRIDES', value: SALT_OVERRIDES]
+                  ])
+              }
 /*
                     [$class: 'StringParameterValue', name: 'TEST_TEMPEST_IMAGE', value: "sandriichenko/rally_tempest_docker:docker_aio"],
                     [$class: 'StringParameterValue', name: 'TEST_TEMPEST_PATTERN', value: "set=smoke"],
                     [$class: 'StringParameterValue', name: 'TEST_TEMPEST_TARGET', value: "I@salt:master"],
 */            
-        }
-        if (DESTROY_ENV.toBoolean() == true) {
-             stage ('Bringing down ${envname} environmnet') {
-                 try {
-                     destroyDevOpsEnv("${devops_dos_path}","${envname}")
-                 } catch (err) {
-                     error("${envname} has not been managed to bring down")
-                 }
-             }
-         }
+          }
+      }
+
+    } else if (DESTROY_ENV.toBoolean() == true && STACK_NAME == "") {
+              stage ('Bringing down ${envname} environmnet') {
+                try {
+                  destroyDevOpsEnv("${devops_dos_path}","${envname}")
+                } catch (err) {
+                    error("${envname} has not been managed to bring down")
+                }
+              }
     }
-    
 }
 
