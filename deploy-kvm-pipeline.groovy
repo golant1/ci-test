@@ -114,13 +114,13 @@ node ("${SLAVE_NODE}") {
     devops_dos_path = '/var/fuel-devops-venv/fuel-devops-venv/bin/dos.py'
     devops_work_dir = '/var/fuel-devops-venv'
     def dt = new Date().getTime()
-    def envname = "${params.ENV_NAME}-${dt}"
+    def envname = "${params.STACK_NAME}-${dt}"
     
     stage ('Creating environmet') {
-        if ("${params.ENV_NAME}" == '') {
+        if ("${params.STACK_NAME}" == '') {
             error("ENV_NAME have to be defined")
         }
-        echo "${params.ENV_NAME} ${params.TEMPLATE}"
+        echo "${params.STACK_NAME} ${params.TEMPLATE}"
         if ("${params.TEMPLATE}" == 'Single') {
             echo "Single"
             tpl = '/var/fuel-devops-venv/tpl/clound-init-single.yaml'
@@ -138,7 +138,7 @@ node ("${SLAVE_NODE}") {
        try {
            startupDevOpsEnv("${devops_dos_path}","${devops_work_dir}","${envname}")
        } catch (err) {
-           error("${params.ENV_NAME} has not been managed to bring up")
+           error("${params.STACK_NAME} has not been managed to bring up")
        }
     }
     stage ('Getting environment IP') {
