@@ -7,7 +7,8 @@ git = new com.mirantis.mk.Git()
 * DESTROY_ENV           To shutdown env once job is finished
 * DEPLOY_OPENSTACK      if set True OpenStack will be deployed
 * SLAVE_NODE            The node where VM is going to be created
-* JOB_DEP_NAME          The node where VM is going to be created
+* JOB_DEP_NAME          Job name which deployes stack
+* CREATE_ENV            Enable if the env have to be created
 */
 
 
