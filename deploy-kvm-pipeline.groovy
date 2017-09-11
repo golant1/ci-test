@@ -131,7 +131,7 @@ node ("${SLAVE_NODE}") {
           echo "${params.STACK_NAME} ${params.TEMPLATE}"
           if ("${params.TEMPLATE}" == 'Single') {
               echo "Single"
-              tpl = '/var/fuel-devops-venv/tpl/clound-init-single.yaml'
+              tpl = "${env.WORKSPACE}/templates/clound-init-single.yaml"
           } else if ("${params.TEMPLATE}" == 'Multi') {
               echo "Multi"
           }
