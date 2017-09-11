@@ -1,4 +1,5 @@
 common = new com.mirantis.mk.Common()
+git = new com.mirantis.mk.Git()
 
 /**
 * ENV_NAME              The prefix for env name is going to be created
@@ -121,8 +122,11 @@ node ("${SLAVE_NODE}") {
       envname = "${params.STACK_NAME}-${dt}"
     
       stage ('Creating environmet') {
+          // get DevOps templates
+          git.checkoutGitRepository('templates\', 'https://github.com/ohryhorov/devops-templates', 'master', '')
+
           if ("${params.STACK_NAME}" == '') {
-              error("ENV_NAME have to be defined")
+              error("ENV_NAME variable have to be defined")
           }
           echo "${params.STACK_NAME} ${params.TEMPLATE}"
           if ("${params.TEMPLATE}" == 'Single') {
