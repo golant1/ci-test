@@ -123,7 +123,7 @@ node ("${SLAVE_NODE}") {
     
       stage ('Creating environmet') {
           // get DevOps templates
-          git.checkoutGitRepository('templates\', 'https://github.com/ohryhorov/devops-templates', 'master', '')
+          git.checkoutGitRepository('templates', 'https://github.com/ohryhorov/devops-templates', 'master', '')
 
           if ("${params.STACK_NAME}" == '') {
               error("ENV_NAME variable have to be defined")
