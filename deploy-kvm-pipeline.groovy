@@ -2,7 +2,7 @@ common = new com.mirantis.mk.Common()
 git = new com.mirantis.mk.Git()
 
 /**
-* ENV_NAME              The prefix for env name is going to be created
+* STACK_NAME            The prefix for env name is going to be created
 * TEMPLATE              There are two templates are available for one-node installation and two-node (Single or Multi)
 * DESTROY_ENV           To shutdown env once job is finished
 * DEPLOY_OPENSTACK      if set True OpenStack will be deployed
