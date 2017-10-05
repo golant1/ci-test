@@ -1,5 +1,6 @@
 common = new com.mirantis.mk.Common()
 git = new com.mirantis.mk.Git()
+python = new com.mirantis.mk.Python()
 
 /**
 * STACK_NAME            The prefix for env name is going to be created
@@ -111,11 +112,22 @@ def ifEnvIsReady(envip){
     }    
 }
 
+def setupDevOpsVenv(path) {                                                                                                                                                                                                            
+    requirements = ['git+https://github.com/openstack/fuel-devops.git']                                                                                                                                                                                                           
+    python.setupVirtualenv(path, 'python2', requirements)                                                                                                                                                                                           
+}
 
 node ("${SLAVE_NODE}") {
-    devops_dos_path = '/var/fuel-devops-venv/fuel-devops-venv/bin/dos.py'
-    devops_work_dir = '/var/fuel-devops-venv'
+    def venv="${env.WORKSPACE}/devops-venv"
+    def devops_dos_path = "${venv}/bin/dos.py"
+    def devops_work_dir = "${venv}"
     def envname
+
+    try {
+        setupDevOpsVenv(venv)
+    } catch (err) {
+        error("${err}")
+    }
 
     if (CREATE_ENV.toBoolean() == true) {
 
@@ -161,23 +173,35 @@ node ("${SLAVE_NODE}") {
       }
       stage ('Checking whether the env has finished starting') {
           ifEnvIsReady("${envip}")
+
           if (DEPLOY_OPENSTACK.toBoolean() == true) {
-              stage ('Deploying Openstack') {
+
+               stack_deploy_job = "deploy-${STACK_TYPE}-${TEST_MODEL}"
+                stage('Trigger deploy job') {               
+                    deployBuild = build(job: stack_deploy_job, parameters: [
+                        [$class: 'StringParameterValue', name: 'OPENSTACK_API_PROJECT', value: OPENSTACK_API_PROJECT],
+                        [$class: 'StringParameterValue', name: 'HEAT_STACK_ZONE', value: HEAT_STACK_ZONE],
+                        [$class: 'StringParameterValue', name: 'STACK_INSTALL', value: STACK_INSTALL],
+                        [$class: 'StringParameterValue', name: 'STACK_TEST', value: ''],
+                        [$class: 'StringParameterValue', name: 'STACK_TYPE', value: STACK_TYPE],
+                        [$class: 'StringParameterValue', name: 'SALT_MASTER_URL', value: "http://${envip}:6969"],
+                        [$class: 'StringParameterValue', name: 'SLAVE_NODE', value: SLAVE_NODE],
+                        [$class: 'BooleanParameterValue', name: 'STACK_DELETE', value: false],
+                        [$class: 'TextParameterValue', name: 'SALT_OVERRIDES', value: SALT_OVERRIDES]
+                    ])
+                }
+
+/*              stage ('Deploying Openstack') {
                   build(job: "${JOB_DEP_NAME}", parameters: [
                       [$class: 'StringParameterValue', name: 'SALT_MASTER_URL', value: "http://${envip}:6969"],
                       [$class: 'StringParameterValue', name: 'STACK_INSTALL', value: STACK_INSTALL],
                       [$class: 'StringParameterValue', name: 'STACK_TYPE', value: "physical"],
                       [$class: 'TextParameterValue', name: 'SALT_OVERRIDES', value: SALT_OVERRIDES]
                   ])
-              }
-/*
-                    [$class: 'StringParameterValue', name: 'TEST_TEMPEST_IMAGE', value: "sandriichenko/rally_tempest_docker:docker_aio"],
-                    [$class: 'StringParameterValue', name: 'TEST_TEMPEST_PATTERN', value: "set=smoke"],
-                    [$class: 'StringParameterValue', name: 'TEST_TEMPEST_TARGET', value: "I@salt:master"],
+              } 
 */            
           }
       }
-
     } else if (DESTROY_ENV.toBoolean() == true) {
               stage ('Bringing down environmnet') {
                 try {
