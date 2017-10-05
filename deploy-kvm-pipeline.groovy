@@ -120,7 +120,7 @@ def setupDevOpsVenv(path) {
 node ("${SLAVE_NODE}") {
     def venv="${env.WORKSPACE}/devops-venv"
     def devops_dos_path = "${venv}/bin/dos.py"
-    def devops_work_dir = "${venv}"
+    def devops_work_dir = "/var/fuel-devops-venv"
     def envname
 
     try {
