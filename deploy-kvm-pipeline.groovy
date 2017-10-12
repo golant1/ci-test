@@ -19,11 +19,13 @@ python = new com.mirantis.mk.Python()
  * @param work_dir path where devops is installed
  * @param type Path to template having been created
  */
-def createDevOpsEnv(path, tpl, env){
+def createDevOpsEnv(path, tpl, env, envVars){
 //    echo "${path} ${tpl}"
+    withEnv(envVars) {
     return sh(script:"""
     ${path} create-env ${tpl}
     """, returnStdout: true)
+    }
 }
 
 /**
@@ -131,7 +133,7 @@ node ("${SLAVE_NODE}") {
     if (CREATE_ENV.toBoolean() == true) {
 
       def dt = new Date().getTime()
-      def envname = "${params.STACK_NAME}-${dt}"
+      envname = "${params.STACK_NAME}-${dt}"
       envVars.push("ENV_NAME=${envname}")
         echo "${envVars}"
 
