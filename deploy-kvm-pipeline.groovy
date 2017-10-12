@@ -80,20 +80,20 @@ def startupDevOpsEnv(path, env, envVars){
  * @param env name of the ENV to find out IP
   */
 def getDevOpsIP(path, env, envVars){
-    return sh(script:"""
-    ${path} slave-ip-list --address-pool-name public-pool01 --ip-only ${env}
-    """, returnStdout: true)
+    withEnv(envVars) {
+        return sh(script:"""
+        ${path} slave-ip-list --address-pool-name public-pool01 --ip-only ${env}
+        """, returnStdout: true)
+    }
 }
 
 def ifEnvIsReady(envip){
     def retries = 50
     if (retries != -1){
         retry(retries){
-            withEnv(envVars) {
-                return sh(script:"""
-                nc -z -w 30 ${envip} 22
-                """, returnStdout: true)
-            }
+            return sh(script:"""
+            nc -z -w 30 ${envip} 22
+            """, returnStdout: true)
         }
         common.successMsg("The env with IP ${envip} has been started")
     } else {
