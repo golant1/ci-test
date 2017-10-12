@@ -19,12 +19,12 @@ python = new com.mirantis.mk.Python()
  * @param work_dir path where devops is installed
  * @param type Path to template having been created
  */
-def createDevOpsEnv(path, tpl, env, envVars){
+def createDevOpsEnv(path, tpl, envVars){
 //    echo "${path} ${tpl}"
     withEnv(envVars) {
-    return sh(script:"""
-    ${path} create-env ${tpl}
-    """, returnStdout: true)
+        return sh(script:"""
+        ${path} create-env ${tpl}
+        """, returnStdout: true)
     }
 }
 
@@ -34,15 +34,13 @@ def createDevOpsEnv(path, tpl, env, envVars){
  * @param path Path to dos.py
  * @param env name of the ENV have to be deleted
   */
-def eraseDevOpsEnv(path, work_dir, env){
+def eraseDevOpsEnv(path, env, envVars){
     echo "${env} will be erased"
-    return sh(script:"""
-    export ENV_NAME=${env} &&
-    export WORKING_DIR=${work_dir} &&
-    export DEVOPS_DB_NAME=${work_dir}/fuel-devops.sqlite &&
-    export DEVOPS_DB_ENGINE=django.db.backends.sqlite3 &&
-    ${path} erase ${env}
-    """, returnStdout: true)
+    withEnv(envVars) {
+        return sh(script:"""
+        ${path} erase ${env}
+        """, returnStdout: true)
+    }
 }
 
 /**
@@ -51,14 +49,12 @@ def eraseDevOpsEnv(path, work_dir, env){
  * @param path Path to dos.py
  * @param env name of the ENV have to be destroyed
   */
-def destroyDevOpsEnv(path, work_dir, env){
-    return sh(script:"""
-    export ENV_NAME=${env} &&
-    export WORKING_DIR=${work_dir} &&
-    export DEVOPS_DB_NAME=${work_dir}/fuel-devops.sqlite &&
-    export DEVOPS_DB_ENGINE=django.db.backends.sqlite3 &&
-    ${path} destroy ${env}
-    """, returnStdout: true)
+def destroyDevOpsEnv(path, env, envVars){
+    withEnv(envVars) {
+        return sh(script:"""
+        ${path} destroy ${env}
+        """, returnStdout: true)
+    }
 }
 
 /**
@@ -68,14 +64,12 @@ def destroyDevOpsEnv(path, work_dir, env){
  * @param work_dir path where devops is installed
  * @param env name of the ENV have to be brought up
   */
-def startupDevOpsEnv(path, work_dir, env){
-    return sh(script:"""
-    export ENV_NAME=${env} &&
-    export WORKING_DIR=${work_dir} &&
-    export DEVOPS_DB_NAME=${work_dir}/fuel-devops.sqlite &&
-    export DEVOPS_DB_ENGINE=django.db.backends.sqlite3 &&
-    ${path} start ${env}
-    """, returnStdout: true)
+def startupDevOpsEnv(path, env, envVars){
+    withEnv(envVars) {
+        return sh(script:"""
+        ${path} start ${env}
+        """, returnStdout: true)
+    }
 }
 
 /**
@@ -85,12 +79,8 @@ def startupDevOpsEnv(path, work_dir, env){
  * @param work_dir path where devops is installed
  * @param env name of the ENV to find out IP
   */
-def getDevOpsIP(path, work_dir, env){
+def getDevOpsIP(path, env, envVars){
     return sh(script:"""
-    export ENV_NAME=${env} &&
-    export WORKING_DIR=${work_dir} &&
-    export DEVOPS_DB_NAME=${work_dir}/fuel-devops.sqlite &&
-    export DEVOPS_DB_ENGINE=django.db.backends.sqlite3 &&
     ${path} slave-ip-list --address-pool-name public-pool01 --ip-only ${env}
     """, returnStdout: true)
 }
@@ -135,7 +125,6 @@ node ("${SLAVE_NODE}") {
       def dt = new Date().getTime()
       envname = "${params.STACK_NAME}-${dt}"
       envVars.push("ENV_NAME=${envname}")
-        echo "${envVars}"
 
       stage ('Creating environmet') {
           // get DevOps templates
@@ -152,7 +141,7 @@ node ("${SLAVE_NODE}") {
               echo "Multi"
           }
           try {
-              createDevOpsEnv("${devops_dos_path}","${tpl}","${envname}",envVars)
+              createDevOpsEnv("${devops_dos_path}","${tpl}",envVars)
           } catch (err) {
               error("${err}")
               //eraseDevOpsEnv("${params.ENV_NAME}")
@@ -160,14 +149,14 @@ node ("${SLAVE_NODE}") {
       }
       stage ('Bringing up the environment') {
          try {
-             startupDevOpsEnv("${devops_dos_path}","${devops_work_dir}","${envname}")
+             startupDevOpsEnv("${devops_dos_path}","${envname}",envVars)
          } catch (err) {
              error("${params.STACK_NAME} has not been managed to bring up")
          }
       }
       stage ('Getting environment IP') {
          try {
-             envip = getDevOpsIP("${devops_dos_path}","${devops_work_dir}","${envname}").trim()
+             envip = getDevOpsIP("${devops_dos_path}","${envname}",envVars).trim()
              currentBuild.description = "${envname} ${envip}"
          } catch (err) {
              error("IP of the env ${envname} can't be got")
@@ -198,9 +187,11 @@ node ("${SLAVE_NODE}") {
               stage ('Bringing down environmnet') {
                 try {
                   if (STACK_NAME) {
-                    destroyDevOpsEnv("${devops_dos_path}","${devops_work_dir}",STACK_NAME)
+                    envVars.push("ENV_NAME=${STACK_NAME}")
+                    destroyDevOpsEnv("${devops_dos_path}",STACK_NAME,envVars)
                   } else {
-                    destroyDevOpsEnv("${devops_dos_path}","${devops_work_dir}","${envname}")
+                    envVars.push("ENV_NAME=${envname}")
+                    destroyDevOpsEnv("${devops_dos_path}","${envname}",envVars)
                   }
                 } catch (Exception e) {
                     throw e
