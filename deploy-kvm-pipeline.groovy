@@ -1,7 +1,3 @@
-common = new com.mirantis.mk.Common()
-git = new com.mirantis.mk.Git()
-python = new com.mirantis.mk.Python()
-
 /**
 * STACK_NAME            The prefix for env name is going to be created
 * TEMPLATE              There are two templates are available for one-node installation and two-node (Single or Multi)
@@ -12,30 +8,29 @@ python = new com.mirantis.mk.Python()
 * CREATE_ENV            Enable if the env have to be created
 */
 
+common = new com.mirantis.mk.Common()
+git = new com.mirantis.mk.Git()
+python = new com.mirantis.mk.Python()
 
 /**
  * Creates env according to input params by DevOps tool
- * 
- * @param path Path to dos.py 
+ *
+ * @param path Path to dos.py
  * @param work_dir path where devops is installed
  * @param type Path to template having been created
  */
-def createDevOpsEnv(path, work_dir, tpl, env){
+def createDevOpsEnv(path, tpl, env){
 //    echo "${path} ${tpl}"
     return sh(script:"""
-    export ENV_NAME=${env} &&
-    export WORKING_DIR=${work_dir} &&
-    export DEVOPS_DB_NAME=${work_dir}/fuel-devops.sqlite &&
-    export DEVOPS_DB_ENGINE=django.db.backends.sqlite3 && 
     ${path} create-env ${tpl}
     """, returnStdout: true)
 }
 
 /**
- * Erases the env 
+ * Erases the env
  *
- * @param path Path to dos.py  
- * @param env name of the ENV have to be deleted 
+ * @param path Path to dos.py
+ * @param env name of the ENV have to be deleted
   */
 def eraseDevOpsEnv(path, work_dir, env){
     echo "${env} will be erased"
@@ -43,57 +38,57 @@ def eraseDevOpsEnv(path, work_dir, env){
     export ENV_NAME=${env} &&
     export WORKING_DIR=${work_dir} &&
     export DEVOPS_DB_NAME=${work_dir}/fuel-devops.sqlite &&
-    export DEVOPS_DB_ENGINE=django.db.backends.sqlite3 && 
+    export DEVOPS_DB_ENGINE=django.db.backends.sqlite3 &&
     ${path} erase ${env}
     """, returnStdout: true)
 }
 
 /**
- * Shutdown the env 
+ * Shutdown the env
  *
- * @param path Path to dos.py  
- * @param env name of the ENV have to be destroyed 
+ * @param path Path to dos.py
+ * @param env name of the ENV have to be destroyed
   */
 def destroyDevOpsEnv(path, work_dir, env){
     return sh(script:"""
     export ENV_NAME=${env} &&
     export WORKING_DIR=${work_dir} &&
     export DEVOPS_DB_NAME=${work_dir}/fuel-devops.sqlite &&
-    export DEVOPS_DB_ENGINE=django.db.backends.sqlite3 && 
+    export DEVOPS_DB_ENGINE=django.db.backends.sqlite3 &&
     ${path} destroy ${env}
-    """, returnStdout: true)    
+    """, returnStdout: true)
 }
 
 /**
- * Starts the env 
- * 
- * @param path Path to dos.py 
+ * Starts the env
+ *
+ * @param path Path to dos.py
  * @param work_dir path where devops is installed
- * @param env name of the ENV have to be brought up 
+ * @param env name of the ENV have to be brought up
   */
 def startupDevOpsEnv(path, work_dir, env){
     return sh(script:"""
     export ENV_NAME=${env} &&
     export WORKING_DIR=${work_dir} &&
     export DEVOPS_DB_NAME=${work_dir}/fuel-devops.sqlite &&
-    export DEVOPS_DB_ENGINE=django.db.backends.sqlite3 && 
+    export DEVOPS_DB_ENGINE=django.db.backends.sqlite3 &&
     ${path} start ${env}
     """, returnStdout: true)
 }
 
 /**
- * Get env IP 
- * 
- * @param path Path to dos.py 
+ * Get env IP
+ *
+ * @param path Path to dos.py
  * @param work_dir path where devops is installed
- * @param env name of the ENV to find out IP 
+ * @param env name of the ENV to find out IP
   */
 def getDevOpsIP(path, work_dir, env){
     return sh(script:"""
     export ENV_NAME=${env} &&
     export WORKING_DIR=${work_dir} &&
     export DEVOPS_DB_NAME=${work_dir}/fuel-devops.sqlite &&
-    export DEVOPS_DB_ENGINE=django.db.backends.sqlite3 && 
+    export DEVOPS_DB_ENGINE=django.db.backends.sqlite3 &&
     ${path} slave-ip-list --address-pool-name public-pool01 --ip-only ${env}
     """, returnStdout: true)
 }
@@ -109,15 +104,17 @@ def ifEnvIsReady(envip){
         common.successMsg("The env with IP ${envip} has been started")
     } else {
         echo "It seems the env has not been started properly"
-    }    
+    }
 }
 
-def setupDevOpsVenv(path) {                                                                                                                                                                                                            
-    requirements = ['git+https://github.com/openstack/fuel-devops.git']                                                                                                                                                                                                           
-    python.setupVirtualenv(path, 'python2', requirements)                                                                                                                                                                                           
+def setupDevOpsVenv(venv) {
+    requirements = ['git+https://github.com/openstack/fuel-devops.git']
+    python.setupVirtualenv(venv, 'python2', requirements)
 }
 
-node ('oscore-testing') {
+def SLAVE_NODE = 'oscore-testing'
+
+node ("${SLAVE_NODE}") {
     def venv="${env.WORKSPACE}/devops-venv"
     def devops_dos_path = "${venv}/bin/dos.py"
     def devops_work_dir = "/var/fuel-devops-venv"
@@ -128,12 +125,16 @@ node ('oscore-testing') {
     } catch (err) {
         error("${err}")
     }
+    
+    List envVars = ["WORKING_DIR=${devops_work_dir}","DEVOPS_DB_NAME=${devops_work_dir}/fuel-devops.sqlite","DEVOPS_DB_ENGINE=django.db.backends.sqlite3"]
 
     if (CREATE_ENV.toBoolean() == true) {
 
       def dt = new Date().getTime()
-      envname = "${params.STACK_NAME}-${dt}"
-    
+      def envname = "${params.STACK_NAME}-${dt}"
+      envVars.push("ENV_NAME=${envname}")
+        echo "${envVars}"
+
       stage ('Creating environmet') {
           // get DevOps templates
           git.checkoutGitRepository('templates', 'https://github.com/ohryhorov/devops-templates', 'master', '')
@@ -143,16 +144,16 @@ node ('oscore-testing') {
           }
           echo "${params.STACK_NAME} ${params.TEMPLATE}"
           if ("${params.TEMPLATE}" == 'Single') {
-              echo "Single"
               tpl = "${env.WORKSPACE}/templates/clound-init-single.yaml"
           } else if ("${params.TEMPLATE}" == 'Multi') {
+              //multinode deployment will be here
               echo "Multi"
           }
           try {
-              createDevOpsEnv("${devops_dos_path}","${devops_work_dir}","${tpl}","${envname}")
+              createDevOpsEnv("${devops_dos_path}","${devops_work_dir}","${tpl}","${envname}",envVars)
           } catch (err) {
               error("${err}")
-//            eraseDevOpsEnv("${params.ENV_NAME}")   
+              //eraseDevOpsEnv("${params.ENV_NAME}")
           }
       }
       stage ('Bringing up the environment') {
@@ -165,11 +166,10 @@ node ('oscore-testing') {
       stage ('Getting environment IP') {
          try {
              envip = getDevOpsIP("${devops_dos_path}","${devops_work_dir}","${envname}").trim()
-             echo "${envip}"
              currentBuild.description = "${envname} ${envip}"
          } catch (err) {
              error("IP of the env ${envname} can't be got")
-         }                
+         }
       }
       stage ('Checking whether the env has finished starting') {
           ifEnvIsReady("${envip}")
@@ -177,7 +177,7 @@ node ('oscore-testing') {
           if (DEPLOY_OPENSTACK.toBoolean() == true) {
 
                stack_deploy_job = "deploy-${STACK_TYPE}-${TEST_MODEL}"
-                stage('Trigger deploy job') {               
+                stage('Trigger deploy job') {
                     deployBuild = build(job: stack_deploy_job, parameters: [
                         [$class: 'StringParameterValue', name: 'OPENSTACK_API_PROJECT', value: OPENSTACK_API_PROJECT],
                         [$class: 'StringParameterValue', name: 'HEAT_STACK_ZONE', value: HEAT_STACK_ZONE],
