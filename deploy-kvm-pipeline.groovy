@@ -190,22 +190,12 @@ node ('oscore-testing') {
                         [$class: 'TextParameterValue', name: 'SALT_OVERRIDES', value: SALT_OVERRIDES]
                     ])
                 }
-
-/*              stage ('Deploying Openstack') {
-                  build(job: "${JOB_DEP_NAME}", parameters: [
-                      [$class: 'StringParameterValue', name: 'SALT_MASTER_URL', value: "http://${envip}:6969"],
-                      [$class: 'StringParameterValue', name: 'STACK_INSTALL', value: STACK_INSTALL],
-                      [$class: 'StringParameterValue', name: 'STACK_TYPE', value: "physical"],
-                      [$class: 'TextParameterValue', name: 'SALT_OVERRIDES', value: SALT_OVERRIDES]
-                  ])
-              } 
-*/            
           }
       }
     } else if (DESTROY_ENV.toBoolean() == true) {
               stage ('Bringing down environmnet') {
                 try {
-                  if ("${envname}") {
+                  if (STACK_NAME) {
                     destroyDevOpsEnv("${devops_dos_path}","${devops_work_dir}",STACK_NAME)
                   } else {
                     destroyDevOpsEnv("${devops_dos_path}","${devops_work_dir}","${envname}")
