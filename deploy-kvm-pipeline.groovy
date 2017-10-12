@@ -152,7 +152,7 @@ node ("${SLAVE_NODE}") {
               echo "Multi"
           }
           try {
-              createDevOpsEnv("${devops_dos_path}","${devops_work_dir}","${tpl}","${envname}",envVars)
+              createDevOpsEnv("${devops_dos_path}","${tpl}","${envname}",envVars)
           } catch (err) {
               error("${err}")
               //eraseDevOpsEnv("${params.ENV_NAME}")
