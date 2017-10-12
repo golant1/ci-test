@@ -89,9 +89,11 @@ def ifEnvIsReady(envip){
     def retries = 50
     if (retries != -1){
         retry(retries){
-            return sh(script:"""
-            nc -z -w 30 ${envip} 22
-            """, returnStdout: true)
+            withEnv(envVars) {
+                return sh(script:"""
+                nc -z -w 30 ${envip} 22
+                """, returnStdout: true)
+            }
         }
         common.successMsg("The env with IP ${envip} has been started")
     } else {
