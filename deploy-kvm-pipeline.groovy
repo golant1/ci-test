@@ -22,9 +22,7 @@ python = new com.mirantis.mk.Python()
 def createDevOpsEnv(path, tpl, envVars){
 //    echo "${path} ${tpl}"
     withEnv(envVars) {
-        return sh(script:"""
-        ${path} create-env ${tpl}
-        """, returnStdout: true)
+        return sh(script:"${path} create-env ${tpl}", returnStdout: true, )
     }
 }
 
@@ -37,9 +35,7 @@ def createDevOpsEnv(path, tpl, envVars){
 def eraseDevOpsEnv(path, env, envVars){
     echo "${env} will be erased"
     withEnv(envVars) {
-        return sh(script:"""
-        ${path} erase ${env}
-        """, returnStdout: true)
+        return sh(script:"${path} erase ${env}", returnStdout: true, )
     }
 }
 
@@ -51,9 +47,7 @@ def eraseDevOpsEnv(path, env, envVars){
   */
 def destroyDevOpsEnv(path, env, envVars){
     withEnv(envVars) {
-        return sh(script:"""
-        ${path} destroy ${env}
-        """, returnStdout: true)
+        return sh(script:"${path} destroy ${env}", returnStdout: true, )
     }
 }
 
@@ -66,9 +60,7 @@ def destroyDevOpsEnv(path, env, envVars){
   */
 def startupDevOpsEnv(path, env, envVars){
     withEnv(envVars) {
-        return sh(script:"""
-        ${path} start ${env}
-        """, returnStdout: true)
+        return sh(script:"${path} start ${env}", returnStdout: true, )
     }
 }
 
@@ -81,9 +73,7 @@ def startupDevOpsEnv(path, env, envVars){
   */
 def getDevOpsIP(path, env, envVars){
     withEnv(envVars) {
-        return sh(script:"""
-        ${path} slave-ip-list --address-pool-name public-pool01 --ip-only ${env}
-        """, returnStdout: true)
+        return sh(script:"${path} slave-ip-list --address-pool-name public-pool01 --ip-only ${env}", returnStdout: true, )
     }
 }
 
@@ -91,9 +81,7 @@ def ifEnvIsReady(envip){
     def retries = 50
     if (retries != -1){
         retry(retries){
-            return sh(script:"""
-            nc -z -w 30 ${envip} 22
-            """, returnStdout: true)
+            return sh(script:"nc -z -w 30 ${envip} 22", returnStdout: true, )
         }
         common.successMsg("The env with IP ${envip} has been started")
     } else {
@@ -115,10 +103,9 @@ node ('oscore-testing') {
     try {
         setupDevOpsVenv(venv)
 
-        List envVars = ["WORKING_DIR=${devops_work_dir}","DEVOPS_DB_NAME=${devops_work_dir}/fuel-devops.sqlite",'DEVOPS_DB_ENGINE=django.db.backends.sqlite3']
+        List envVars = ["WORKING_DIR=${devops_work_dir}", "DEVOPS_DB_NAME=${devops_work_dir}/fuel-devops.sqlite", 'DEVOPS_DB_ENGINE=django.db.backends.sqlite3']
 
         if (CREATE_ENV.toBoolean() == true) {
-
           def dt = new Date().getTime()
           envname = "${params.STACK_NAME}-${dt}"
           envVars.push("ENV_NAME=${envname}")
@@ -128,7 +115,7 @@ node ('oscore-testing') {
               git.checkoutGitRepository('templates', 'https://github.com/ohryhorov/devops-templates', 'master', '')
 
               if ("${params.STACK_NAME}" == '') {
-                  error("ENV_NAME variable have to be defined")
+                  error('ENV_NAME variable have to be defined')
               }
               echo "${params.STACK_NAME} ${params.TEMPLATE}"
               if ("${params.TEMPLATE}" == 'Single') {
@@ -150,7 +137,6 @@ node ('oscore-testing') {
               ifEnvIsReady("${envip}")
 
               if (DEPLOY_OPENSTACK.toBoolean() == true) {
-
                    stack_deploy_job = "deploy-${STACK_TYPE}-${TEST_MODEL}"
                     stage('Trigger deploy job') {
                         deployBuild = build(job: stack_deploy_job, parameters: [
@@ -178,7 +164,6 @@ node ('oscore-testing') {
                       }
                   }
         }
-
     } catch (Exception e) {
         throw e
     }
