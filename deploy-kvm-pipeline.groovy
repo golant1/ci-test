@@ -94,7 +94,7 @@ def setupDevOpsVenv(venv) {
     python.setupVirtualenv(venv, 'python2', requirements)
 }
 
-node ('oscore-testing') {
+node {
     def venv="${env.WORKSPACE}/devops-venv"
     def devops_dos_path = "${venv}/bin/dos.py"
     def devops_work_dir = '/var/fuel-devops-venv'
