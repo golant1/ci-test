@@ -97,7 +97,7 @@ def ifEnvIsReady(envip){
         }
         common.successMsg("The env with IP ${envip} has been started")
     } else {
-        echo "It seems the env has not been started properly"
+        echo 'It seems the env has not been started properly'
     }
 }
 
@@ -106,99 +106,81 @@ def setupDevOpsVenv(venv) {
     python.setupVirtualenv(venv, 'python2', requirements)
 }
 
-def SLAVE_NODE = 'oscore-testing'
-
-node ("${SLAVE_NODE}") {
+node ('oscore-testing') {
     def venv="${env.WORKSPACE}/devops-venv"
     def devops_dos_path = "${venv}/bin/dos.py"
-    def devops_work_dir = "/var/fuel-devops-venv"
+    def devops_work_dir = '/var/fuel-devops-venv'
     def envname
 
     try {
         setupDevOpsVenv(venv)
-    } catch (err) {
-        error("${err}")
-    }
-    
-    List envVars = ["WORKING_DIR=${devops_work_dir}","DEVOPS_DB_NAME=${devops_work_dir}/fuel-devops.sqlite","DEVOPS_DB_ENGINE=django.db.backends.sqlite3"]
 
-    if (CREATE_ENV.toBoolean() == true) {
+        List envVars = ["WORKING_DIR=${devops_work_dir}","DEVOPS_DB_NAME=${devops_work_dir}/fuel-devops.sqlite",'DEVOPS_DB_ENGINE=django.db.backends.sqlite3']
 
-      def dt = new Date().getTime()
-      envname = "${params.STACK_NAME}-${dt}"
-      envVars.push("ENV_NAME=${envname}")
+        if (CREATE_ENV.toBoolean() == true) {
 
-      stage ('Creating environmet') {
-          // get DevOps templates
-          git.checkoutGitRepository('templates', 'https://github.com/ohryhorov/devops-templates', 'master', '')
+          def dt = new Date().getTime()
+          envname = "${params.STACK_NAME}-${dt}"
+          envVars.push("ENV_NAME=${envname}")
 
-          if ("${params.STACK_NAME}" == '') {
-              error("ENV_NAME variable have to be defined")
-          }
-          echo "${params.STACK_NAME} ${params.TEMPLATE}"
-          if ("${params.TEMPLATE}" == 'Single') {
-              tpl = "${env.WORKSPACE}/templates/clound-init-single.yaml"
-          } else if ("${params.TEMPLATE}" == 'Multi') {
-              //multinode deployment will be here
-              echo "Multi"
-          }
-          try {
-              createDevOpsEnv("${devops_dos_path}","${tpl}",envVars)
-          } catch (err) {
-              error("${err}")
-              //eraseDevOpsEnv("${params.ENV_NAME}")
-          }
-      }
-      stage ('Bringing up the environment') {
-         try {
-             startupDevOpsEnv("${devops_dos_path}","${envname}",envVars)
-         } catch (err) {
-             error("${params.STACK_NAME} has not been managed to bring up")
-         }
-      }
-      stage ('Getting environment IP') {
-         try {
-             envip = getDevOpsIP("${devops_dos_path}","${envname}",envVars).trim()
-             currentBuild.description = "${envname} ${envip}"
-         } catch (err) {
-             error("IP of the env ${envname} can't be got")
-         }
-      }
-      stage ('Checking whether the env has finished starting') {
-          ifEnvIsReady("${envip}")
+          stage ('Creating environmet') {
+              // get DevOps templates
+              git.checkoutGitRepository('templates', 'https://github.com/ohryhorov/devops-templates', 'master', '')
 
-          if (DEPLOY_OPENSTACK.toBoolean() == true) {
-
-               stack_deploy_job = "deploy-${STACK_TYPE}-${TEST_MODEL}"
-                stage('Trigger deploy job') {
-                    deployBuild = build(job: stack_deploy_job, parameters: [
-                        [$class: 'StringParameterValue', name: 'OPENSTACK_API_PROJECT', value: OPENSTACK_API_PROJECT],
-                        [$class: 'StringParameterValue', name: 'HEAT_STACK_ZONE', value: HEAT_STACK_ZONE],
-                        [$class: 'StringParameterValue', name: 'STACK_INSTALL', value: STACK_INSTALL],
-                        [$class: 'StringParameterValue', name: 'STACK_TEST', value: ''],
-                        [$class: 'StringParameterValue', name: 'STACK_TYPE', value: STACK_TYPE],
-                        [$class: 'StringParameterValue', name: 'SALT_MASTER_URL', value: "http://${envip}:6969"],
-                        [$class: 'StringParameterValue', name: 'SLAVE_NODE', value: SLAVE_NODE],
-                        [$class: 'BooleanParameterValue', name: 'STACK_DELETE', value: false],
-                        [$class: 'TextParameterValue', name: 'SALT_OVERRIDES', value: SALT_OVERRIDES]
-                    ])
-                }
-          }
-      }
-    } else if (DESTROY_ENV.toBoolean() == true) {
-              stage ('Bringing down environmnet') {
-                try {
-                  if (STACK_NAME) {
-                    envVars.push("ENV_NAME=${STACK_NAME}")
-                    destroyDevOpsEnv("${devops_dos_path}",STACK_NAME,envVars)
-                  } else {
-                    envVars.push("ENV_NAME=${envname}")
-                    destroyDevOpsEnv("${devops_dos_path}","${envname}",envVars)
-                  }
-                } catch (Exception e) {
-                    throw e
-                }
+              if ("${params.STACK_NAME}" == '') {
+                  error("ENV_NAME variable have to be defined")
               }
+              echo "${params.STACK_NAME} ${params.TEMPLATE}"
+              if ("${params.TEMPLATE}" == 'Single') {
+                  tpl = "${env.WORKSPACE}/templates/clound-init-single.yaml"
+              } else if ("${params.TEMPLATE}" == 'Multi') {
+                  //multinode deployment will be here
+                  echo 'Multi'
+              }
+              createDevOpsEnv("${devops_dos_path}", "${tpl}", envVars)
+          }
+          stage ('Bringing up the environment') {
+              startupDevOpsEnv("${devops_dos_path}", "${envname}", envVars)
+          }
+          stage ('Getting environment IP') {
+              envip = getDevOpsIP("${devops_dos_path}", "${envname}", envVars).trim()
+              currentBuild.description = "${envname} ${envip}"
+          }
+          stage ('Checking whether the env has finished starting') {
+              ifEnvIsReady("${envip}")
+
+              if (DEPLOY_OPENSTACK.toBoolean() == true) {
+
+                   stack_deploy_job = "deploy-${STACK_TYPE}-${TEST_MODEL}"
+                    stage('Trigger deploy job') {
+                        deployBuild = build(job: stack_deploy_job, parameters: [
+                            [$class: 'StringParameterValue', name: 'OPENSTACK_API_PROJECT', value: OPENSTACK_API_PROJECT],
+                            [$class: 'StringParameterValue', name: 'HEAT_STACK_ZONE', value: HEAT_STACK_ZONE],
+                            [$class: 'StringParameterValue', name: 'STACK_INSTALL', value: STACK_INSTALL],
+                            [$class: 'StringParameterValue', name: 'STACK_TEST', value: ''],
+                            [$class: 'StringParameterValue', name: 'STACK_TYPE', value: STACK_TYPE],
+                            [$class: 'StringParameterValue', name: 'SALT_MASTER_URL', value: "http://${envip}:6969"],
+                            [$class: 'StringParameterValue', name: 'SLAVE_NODE', value: 'oscore-testing'],
+                            [$class: 'BooleanParameterValue', name: 'STACK_DELETE', value: false],
+                            [$class: 'TextParameterValue', name: 'SALT_OVERRIDES', value: SALT_OVERRIDES]
+                        ])
+                    }
+              }
+          }
+        } else if (DESTROY_ENV.toBoolean() == true) {
+                  stage ('Bringing down environmnet') {
+                      if (STACK_NAME) {
+                        envVars.push("ENV_NAME=${STACK_NAME}")
+                        destroyDevOpsEnv("${devops_dos_path}", STACK_NAME, envVars)
+                      } else {
+                        envVars.push("ENV_NAME=${envname}")
+                        destroyDevOpsEnv("${devops_dos_path}", "${envname}", envVars)
+                      }
+                  }
+        }
+
+    } catch (Exception e) {
+        throw e
     }
 }
 
