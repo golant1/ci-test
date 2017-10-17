@@ -94,7 +94,7 @@ def setupDevOpsVenv(venv) {
     python.setupVirtualenv(venv, 'python2', requirements)
 }
 
-node {
+node('oscore-testing') {
     def venv="${env.WORKSPACE}/devops-venv"
     def devops_dos_path = "${venv}/bin/dos.py"
     def devops_work_dir = '/var/fuel-devops-venv'
@@ -131,7 +131,7 @@ node {
           }
           stage ('Getting environment IP') {
               envip = getDevOpsIP("${devops_dos_path}", "${envname}", envVars).trim()
-              currentBuild.description = "${envname} ${envip}"
+              currentBuild.description = "${envname} ${envip} ${env.NODE_NAME}"
           }
           stage ('Checking whether the env has finished starting') {
               ifEnvIsReady("${envip}")
@@ -146,7 +146,7 @@ node {
                             [$class: 'StringParameterValue', name: 'STACK_TEST', value: ''],
                             [$class: 'StringParameterValue', name: 'STACK_TYPE', value: STACK_TYPE],
                             [$class: 'StringParameterValue', name: 'SALT_MASTER_URL', value: "http://${envip}:6969"],
-                            [$class: 'StringParameterValue', name: 'SLAVE_NODE', value: 'oscore-testing'],
+                            [$class: 'StringParameterValue', name: 'SLAVE_NODE', value: "${env.SLAVE_NODE}"],
                             [$class: 'BooleanParameterValue', name: 'STACK_DELETE', value: false],
                             [$class: 'TextParameterValue', name: 'SALT_OVERRIDES', value: SALT_OVERRIDES]
                         ])
