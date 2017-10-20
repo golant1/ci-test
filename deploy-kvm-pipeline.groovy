@@ -119,7 +119,7 @@ node('oscore-testing') {
               }
               echo "${params.STACK_NAME} ${params.TEMPLATE}"
               if ("${params.TEMPLATE}" == 'Single') {
-                  tpl = "${env.WORKSPACE}/templates/devops/clound-init-single.yaml"
+                  tpl = "${env.WORKSPACE}/templates/clound-init-single.yaml"
               } else if ("${params.TEMPLATE}" == 'Multi') {
                   //multinode deployment will be here
                   echo 'Multi'
