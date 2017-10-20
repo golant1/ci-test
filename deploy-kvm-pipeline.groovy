@@ -114,7 +114,7 @@ node('oscore-testing') {
               // get DevOps templates
               git.checkoutGitRepository('templates', 'https://gerrit.mcp.mirantis.net/openstack-ci/openstack-pipelines.git', 'master', '')
 
-              if (!common.validInputParam("${params.STACK_NAME}")) {
+              if ("${params.STACK_NAME}" == '') {
                   error('ENV_NAME variable have to be defined')
               }
               echo "${params.STACK_NAME} ${params.TEMPLATE}"
