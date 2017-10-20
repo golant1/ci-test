@@ -165,7 +165,7 @@ node('oscore-testing') {
                   }
         }
     } catch (Exception e) {
-        error(e)
+        currentBuild.result = 'FAILURE'
         throw e
     }
 }
