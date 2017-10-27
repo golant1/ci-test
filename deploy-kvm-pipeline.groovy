@@ -112,15 +112,15 @@ node('oscore-testing') {
 
           stage ('Creating environmet') {
               // get DevOps templates
-              git.checkoutGitRepository('templates', 'https://github.com/ohryhorov/devops-templates', 'master', '')
+              git.checkoutGitRepository('templates', 'https://gerrit.mcp.mirantis.net/openstack-ci/openstack-pipelines.git', 'master', '')
 
-              if ("${params.STACK_NAME}" == '') {
-                  error('ENV_NAME variable have to be defined')
+              if (!common.validInputParam('STACK_NAME')) {
+                  error('STACK_NAME variable have to be defined')
               }
-              echo "${params.STACK_NAME} ${params.TEMPLATE}"
-              if ("${params.TEMPLATE}" == 'Single') {
-                  tpl = "${env.WORKSPACE}/templates/clound-init-single.yaml"
-              } else if ("${params.TEMPLATE}" == 'Multi') {
+              echo "${STACK_NAME} ${TEMPLATE}"
+              if (TEMPLATE == 'Single') {
+                  tpl = "${env.WORKSPACE}/templates/devops/clound-init-single.yaml"
+              } else if (TEMPLATE == 'Multi') {
                   //multinode deployment will be here
                   echo 'Multi'
               }
