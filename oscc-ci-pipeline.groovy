@@ -53,9 +53,10 @@ def restGet(master, uri, data = null) {
 
 def matchPublished(server, distribution) {
     def list_published = restGet(server, '/api/publish')
+    def matched
 
     list_published.each {
-        def matched = it.find {key, value -> value == distribution}
+        matched = it.find {key, value -> value == distribution}
     }
     return matched
 }
