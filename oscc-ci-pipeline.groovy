@@ -121,7 +121,7 @@ node('python'){
 
     stage("Publishing the snapshots"){
 
-        if (matchPublished(distribution)) {
+        if (matchPublished(server, distribution)) {
             echo "Can't be published"
         }
 
