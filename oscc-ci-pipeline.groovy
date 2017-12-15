@@ -24,6 +24,8 @@ def restCall(master, uri, method = 'GET', data = null, headers = [:]) {
     if (data) {
         connection.setDoOutput(true)
         connection.setRequestProperty('Content-Type', 'application/json')                    
+        
+        def out = new OutputStreamWriter(connection.outputStream)
         out.write(data)
         out.close()
     }
