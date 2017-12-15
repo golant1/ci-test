@@ -24,13 +24,7 @@ def restCall(master, uri, method = 'GET', data = null, headers = [:]) {
     if (data) {
         connection.setDoOutput(true)
         connection.setRequestProperty('Content-Type', 'application/json')                    
-        if (data instanceof String) {
-            dataStr = data
-        } else {
-            dataStr = new groovy.json.JsonBuilder(data).toString()
-        }
-        def out = new OutputStreamWriter(connection.outputStream)
-        out.write(dataStr)
+        out.write(data)
         out.close()
     }
 
@@ -65,7 +59,7 @@ def snapshotCreate(server, repo) {
     def ts = now.format("yyyyMMddHHmmss", TimeZone.getTimeZone('UTC'));
     def snapshot = "${repo}-${ts}-oscc-dev"
 
-    def data = "\"Name\": \"${snapshot}\""
+    String data = "\"Name\": \"${snapshot}\""
     
     resp = restPost(server, "/api/repos/${repo}/snapshots", data) 
     echo "response: ${resp}"
@@ -81,7 +75,7 @@ def snapshotCreate(server, repo) {
 
 def snapshotPublish(server, snapshot, distribution, components, prefixes = []) {
 
-    def data = "{\"SourceKind\": \"snapshot\", \"Sources\": [{\"Name\": \"${snapshot}\", \"Component\": \"${components}\" }], \"Architectures\": [\"amd64\"], \"Distribution\": \"${distribution}\"}"
+    String data = "{\"SourceKind\": \"snapshot\", \"Sources\": [{\"Name\": \"${snapshot}\", \"Component\": \"${components}\" }], \"Architectures\": [\"amd64\"], \"Distribution\": \"${distribution}\"}"
 
     for (prefix in prefixes) {
         resp = restPost(server, "/api/publish/${prefix}", data)
