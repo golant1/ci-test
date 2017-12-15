@@ -52,7 +52,7 @@ def restGet(master, uri, data = null) {
 
 def listPublish(server) {
 
-    println (http.restGet(server, '/api/publish'))
+    println (restGet(server, '/api/publish'))
 
 }
 
@@ -113,8 +113,8 @@ node('python'){
     def notToPromote
 
     stage("Prepare nightly repo for testing"){
-//        def snapshot = snapshotCreate(server, repo)
-        echo (snapshot)
+        def snapshot = snapshotCreate(server, repo)
+        echo ("Snapshot: ${snapshot}")
         echo (snapshotPublish(server, snapshot, distribution, components, prefixes))
     }
    
