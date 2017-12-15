@@ -22,7 +22,7 @@ def snapshotCreate(server, repo) {
         'Name': snapshot
     ]
     resp = http.restPost(server, "/api/repos/${repo}/snapshots", data) 
-    echo resp
+    echo "response: ${resp}"
 
 //    try {
 //        sh(script: "curl -f -X POST -H 'Content-Type: application/json' --data '{\"Name\":\"$snapshot\"}' ${server}/api/repos/${repo}/snapshots", returnStdout: true, )
@@ -34,9 +34,19 @@ def snapshotCreate(server, repo) {
 }
 
 def snapshotPublish(server, snapshot, distribution, components, prefixes = []) {
+    def data = [
+        'SourceKind': 'snapshot',
+        'Sources': ['Name': snapshot, 'Component': components ],
+        'Architectures': 'amd64',
+        'Distribution': distribution
+    ]
 
     for (prefix in prefixes) {
-        sh(script: "curl -X POST -H 'Content-Type: application/json' --data '{\"SourceKind\": \"snapshot\", \"Sources\": [{\"Name\": \"${snapshot}\", \"Component\": \"${components}\"}], \"Architectures\": [\"amd64\"], \"Distribution\": \"${distribution}\"}' ${server}/api/publish/${prefix}", returnStdout: true, )
+        resp = http.restPost(server, "/api/publish/${prefix}", data)
+        echo "response: ${resp}"
+    
+//        sh(script: "curl -X POST -H 'Content-Type: application/json' --data '{\"SourceKind\": \"snapshot\", \"Sources\": [{\"Name\": \"${snapshot}\", 
+//            \"Component\": \"${components}\"}], \"Architectures\": [\"amd64\"], \"Distribution\": \"${distribution}\"}' ${server}/api/publish/${prefix}", returnStdout: true, )
     }
 
 }
