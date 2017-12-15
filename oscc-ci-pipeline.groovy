@@ -66,7 +66,7 @@ def snapshotCreate(server, repo) {
     def snapshot = "${repo}-${ts}-oscc-dev"
 
     def data = "\"Name\": \"${snapshot}\""
-    ]
+    
     resp = restPost(server, "/api/repos/${repo}/snapshots", data) 
     echo "response: ${resp}"
 
