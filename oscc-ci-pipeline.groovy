@@ -51,13 +51,17 @@ def restGet(master, uri, data = null) {
     return restCall(master, uri, 'GET', data)
 }
 
+def restDel(master, uri, data = null) {
+    return restCall(master, uri, 'DELETE', data)
+}
+
 def matchPublished(server, distribution) {
     def list_published = restGet(server, '/api/publish')
     def matched
 
     list_published.each {
         matched = it.find {key, value -> value == distribution}
-        return matched
+//        return matched
     }
     return matched
 }
@@ -81,7 +85,7 @@ def snapshotCreate(server, repo) {
     return snapshot
 }
 
-def snapshotPublish(server, snapshot, distribution, components, prefixes = []) {
+def snapshotPublish(server, snapshot, distribution, components, prefix) {
 
     String data = "{\"SourceKind\": \"snapshot\", \"Sources\": [{\"Name\": \"${snapshot}\", \"Component\": \"${components}\" }], \"Architectures\": [\"amd64\"], \"Distribution\": \"${distribution}\"}"
 
@@ -92,11 +96,10 @@ def snapshotPublish(server, snapshot, distribution, components, prefixes = []) {
 
 }
 
-def snapshotUnpublish(server, snapshot, distribution, components, prefixes = []) {
+def snapshotUnpublish(server, prefix, distribution) {
 
-    for (prefix in prefixes) {
-        sh(script: "curl -X DELETE http://172.16.48.254:8084/api/publish/${prefix}/${distribution}", returnStdout: true, )
-    }
+    return restDel(server, "/api/publish/${prefix}/${distribution}")
+//    sh(script: "curl -X DELETE http://172.16.48.254:8084/api/publish/${prefix}/${distribution}", returnStdout: true, )
 
 }
 
@@ -125,6 +128,10 @@ node('python'){
 
         if (matchPublished(server, distribution)) {
             echo "Can't be published"
+            for (prefix in prefixes) {
+                snapshotUnpublish(server, snapshot, distribution, components, prefix)
+                common.successMsg("Distribution ${distribution} has been unpublished for prefix ${prefix}")
+            }
         }
 
 /*        for (prefix in prefixes) {
