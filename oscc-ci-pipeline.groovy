@@ -51,10 +51,13 @@ def restGet(master, uri, data = null) {
     return restCall(master, uri, 'GET', data)
 }
 
-def listPublish(server) {
+def matchPublished(server, distribution) {
+    def list_published = restGet(server, '/api/publish')
 
-    return new groovy.json.JsonSlurperClassic().parseText(restGet(server, '/api/publish'))
-
+    list_published.each {
+        def matched = it.find {key, value -> value == distribution}
+    }
+    return matched
 }
 
 def snapshotCreate(server, repo) {
@@ -111,13 +114,16 @@ node('python'){
     def notToPromote   
 
     stage("Creating snapshot from nightly repo"){
-        snapshot = snapshotCreate(server, repo)
+//        snapshot = snapshotCreate(server, repo)
+        snapshot = 'ubuntu-xenial-salt-20171215130623-oscc-dev'
         common.successMsg("Snapshot: ${snapshot} has been created")
     }
 
     stage("Publishing the snapshots"){
 
-        listPublish(server)
+        if (matchPublished(distribution)) {
+            echo "Can't be published"
+        }
 
 /*        for (prefix in prefixes) {
             echo (snapshotPublish(server, snapshot, distribution, components, prefix))
