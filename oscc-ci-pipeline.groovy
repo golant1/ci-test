@@ -56,7 +56,8 @@ def matchPublished(server, distribution) {
     def matched
 
     list_published.each {
-        return matched = it.find {key, value -> value == distribution}
+        matched = it.find {key, value -> value == distribution}
+        return matched
     }
     return matched
 }
