@@ -4,8 +4,8 @@
  *
  **/
 
-def http = new com.mirantis.mk.Http()
-def data = [:]
+http = new com.mirantis.mk.Http()
+data = [:]
 
 def listPublish(server) {
 
