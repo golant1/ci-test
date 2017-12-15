@@ -61,7 +61,7 @@ def snapshotCreate(server, repo) {
     def ts = now.format("yyyyMMddHHmmss", TimeZone.getTimeZone('UTC'));
     def snapshot = "${repo}-${ts}-oscc-dev"
 
-    String data = "\"Name\": \"${snapshot}\""
+    String data = "{\"Name\": \"${snapshot}\"}"
     
     resp = restPost(server, "/api/repos/${repo}/snapshots", data) 
     echo "response: ${resp}"
