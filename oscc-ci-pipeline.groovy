@@ -115,7 +115,7 @@ node('python'){
         common.successMsg("Snapshot: ${snapshot} has been created")
     }
 
-    stage("Publishing the snapshots")
+    stage("Publishing the snapshots"){
 
         listPublish(server)
 
