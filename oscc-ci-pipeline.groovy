@@ -51,7 +51,7 @@ def snapshotUnpublish(server, snapshot, distribution, components, prefixes = [])
 
 node('python'){
     def server = [
-        'url': "http://172.16.48.254:8084"
+        'url': "http://172.18.162.193:8080"
     ]
     def repo = "ubuntu-xenial-salt"
     def distribution = "dev-os-salt-formulas"
@@ -67,11 +67,11 @@ node('python'){
     stage("Prepare nightly repo for testing"){
         def snapshot = snapshotCreate(server, repo)
         echo (snapshot)
-        echo (snapshotPublish(server, snapshot, distribution, components, prefixes))
+//        echo (snapshotPublish(server, snapshot, distribution, components, prefixes))
     }
    
     stage("Deploying environment and testing"){
-        for (openstack_release in OPENSTACK_RELEASES.tokenize(',')) {
+/*        for (openstack_release in OPENSTACK_RELEASES.tokenize(',')) {
             deployBuild = build(job: 'oscore-MCP1.1-virtual_mcp11_aio-pike-stable', propagate: false, parameters: [
                 [$class: 'StringParameterValue', name: 'EXTRA_REPO', value: "deb [arch=amd64] http://${tmp_repo_node_name}/oscc-dev ${distribution} ${components}"],
                 [$class: 'StringParameterValue', name: 'EXTRA_REPO_PRIORITY', value: "1200"],
@@ -81,7 +81,7 @@ node('python'){
                 [$class: 'StringParameterValue', name: 'STACK_RECLASS_BRANCH', value: "stable/" + openstack_release.replaceAll(' ','')],
             ]) 
             buildResult[openstack_release.replaceAll(' ','')] = deployBuild.result
-        }
+        } */
     }
 
     stage("Managing deployment results") {
