@@ -4,8 +4,55 @@
  *
  **/
 
-http = new com.mirantis.mk.Http()
-data = [:]
+def restCall(master, uri, method = 'GET', data = null, headers = [:]) {
+    def connection = new URL("${master.url}${uri}").openConnection()
+    if (method != 'GET') {
+        connection.setRequestMethod(method)
+    }
+
+    connection.setRequestProperty('User-Agent', 'jenkins-groovy')
+    connection.setRequestProperty('Accept', 'application/json')
+    if (master.authToken) {
+        // XXX: removeme
+        connection.setRequestProperty('X-Auth-Token', master.authToken)
+    }
+
+    for (header in headers) {
+        connection.setRequestProperty(header.key, header.value)
+    }
+
+    if (data) {
+        connection.setDoOutput(true)
+        connection.setRequestProperty('Content-Type', 'application/json')                    
+        if (data instanceof String) {
+            dataStr = data
+        } else {
+            dataStr = new groovy.json.JsonBuilder(data).toString()
+        }
+        def out = new OutputStreamWriter(connection.outputStream)
+        out.write(dataStr)
+        out.close()
+    }
+
+    if ( connection.responseCode >= 200 && connection.responseCode < 300 ) {
+        res = connection.inputStream.text
+        try {
+            return new groovy.json.JsonSlurperClassic().parseText(res)
+        } catch (Exception e) {
+            return res
+        }
+    } else {
+        throw new Exception(connection.responseCode + ": " + connection.inputStream.text)
+    }
+}
+
+def restPost(master, uri, data = null) {
+    return restCall(master, uri, 'POST', data, ['Accept': '*/*'])
+}
+
+def restGet(master, uri, data = null) {
+    return restCall(master, uri, 'GET', data)
+}
 
 def listPublish(server) {
 
@@ -18,10 +65,9 @@ def snapshotCreate(server, repo) {
     def ts = now.format("yyyyMMddHHmmss", TimeZone.getTimeZone('UTC'));
     def snapshot = "${repo}-${ts}-oscc-dev"
 
-    def data = [
-        'Name': snapshot
+    def data = "\"Name\": \"${snapshot}\""
     ]
-    resp = http.restPost(server, "/api/repos/${repo}/snapshots", data) 
+    resp = restPost(server, "/api/repos/${repo}/snapshots", data) 
     echo "response: ${resp}"
 
 //    try {
@@ -34,15 +80,11 @@ def snapshotCreate(server, repo) {
 }
 
 def snapshotPublish(server, snapshot, distribution, components, prefixes = []) {
-    def data = [
-        'SourceKind': 'snapshot',
-        'Sources': ['Name': snapshot, 'Component': components ],
-        'Architectures': 'amd64',
-        'Distribution': distribution
-    ]
+
+    def data = "{\"SourceKind\": \"snapshot\", \"Sources\": [{\"Name\": \"${snapshot}\", \"Component\": \"${components}\" }], \"Architectures\": [\"amd64\"], \"Distribution\": \"${distribution}\"}"
 
     for (prefix in prefixes) {
-        resp = http.restPost(server, "/api/publish/${prefix}", data)
+        resp = restPost(server, "/api/publish/${prefix}", data)
         echo "response: ${resp}"
     
 //        sh(script: "curl -X POST -H 'Content-Type: application/json' --data '{\"SourceKind\": \"snapshot\", \"Sources\": [{\"Name\": \"${snapshot}\", 
@@ -75,9 +117,9 @@ node('python'){
     def notToPromote
 
     stage("Prepare nightly repo for testing"){
-        def snapshot = snapshotCreate(server, repo)
+//        def snapshot = snapshotCreate(server, repo)
         echo (snapshot)
-//        echo (snapshotPublish(server, snapshot, distribution, components, prefixes))
+        echo (snapshotPublish(server, snapshot, distribution, components, prefixes))
     }
    
     stage("Deploying environment and testing"){
