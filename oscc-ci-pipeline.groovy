@@ -3,6 +3,7 @@
  *
  *
  **/
+common = new com.mirantis.mk.Common()
 
 def restCall(master, uri, method = 'GET', data = null, headers = [:]) {
     def connection = new URL("${master.url}${uri}").openConnection()
@@ -52,7 +53,7 @@ def restGet(master, uri, data = null) {
 
 def listPublish(server) {
 
-    println (restGet(server, '/api/publish'))
+    return new groovy.json.JsonSlurperClassic().parseText(restGet(server, '/api/publish'))
 
 }
 
@@ -79,13 +80,10 @@ def snapshotPublish(server, snapshot, distribution, components, prefixes = []) {
 
     String data = "{\"SourceKind\": \"snapshot\", \"Sources\": [{\"Name\": \"${snapshot}\", \"Component\": \"${components}\" }], \"Architectures\": [\"amd64\"], \"Distribution\": \"${distribution}\"}"
 
-    for (prefix in prefixes) {
-        resp = restPost(server, "/api/publish/${prefix}", data)
-        echo "response: ${resp}"
-    
 //        sh(script: "curl -X POST -H 'Content-Type: application/json' --data '{\"SourceKind\": \"snapshot\", \"Sources\": [{\"Name\": \"${snapshot}\", 
 //            \"Component\": \"${components}\"}], \"Architectures\": [\"amd64\"], \"Distribution\": \"${distribution}\"}' ${server}/api/publish/${prefix}", returnStdout: true, )
-    }
+
+    return restPost(server, "/api/publish/${prefix}", data)
 
 }
 
@@ -110,12 +108,21 @@ node('python'){
     def STACK_RECLASS_ADDRESS = 'https://gerrit.mcp.mirantis.net/salt-models/mcp-virtual-aio'
     def OPENSTACK_RELEASES = 'ocata,pike'
     def buildResult = [:]
-    def notToPromote
+    def notToPromote   
 
-    stage("Prepare nightly repo for testing"){
-        def snapshot = snapshotCreate(server, repo)
-        echo ("Snapshot: ${snapshot}")
-        echo (snapshotPublish(server, snapshot, distribution, components, prefixes))
+    stage("Creating snapshot from nightly repo"){
+        snapshot = snapshotCreate(server, repo)
+        common.successMsg("Snapshot: ${snapshot} has been created")
+    }
+
+    stage("Publishing the snapshots")
+
+        listPublish(server)
+
+/*        for (prefix in prefixes) {
+            echo (snapshotPublish(server, snapshot, distribution, components, prefix))
+            common.successMsg("Snapshot ${snapshot} has been published for prefix ${prefix}")
+        } */
     }
    
     stage("Deploying environment and testing"){
