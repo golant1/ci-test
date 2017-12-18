@@ -63,9 +63,9 @@ def matchPublished(server, distribution, prefix) {
     for (items in list_published) {
         for (row in items) {
             println ("items: ${items} key ${row.key} value ${row.value}")
-            if (row.key == 'Distribution' && row.value == distribution && items['Prefix'] == prefix) {
+            if (row.key == 'Distribution' && row.value == distribution && items['Prefix'] == prefix.tokenize(':').last()) {
                 println ("items1: ${items} key ${row.key} value ${row.value}")
-                return items['Prefix']
+                return prefix
             }
         }
     }
@@ -143,7 +143,7 @@ node('python'){
     stage("Publishing the snapshots"){
 
         for (prefix in prefixes) {
-            common.infoMsg("Checking is ${distribution} publish for prefix ${prefix}")
+            common.infoMsg("Checking ${distribution} is published for prefix ${prefix}")
             retPrefix = matchPublished(server, distribution, prefix)
             if (retPrefix) {
                 echo "Can't be published for prefix ${retPrefix}. The distribution will be unpublished."
