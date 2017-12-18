@@ -133,7 +133,6 @@ node('python'){
     def OPENSTACK_RELEASES = 'ocata,pike'
     def buildResult = [:]
     def notToPromote
-    retPrefix
 
     stage("Creating snapshot from nightly repo"){
 //        snapshot = snapshotCreate(server, repo)
@@ -144,9 +143,10 @@ node('python'){
     stage("Publishing the snapshots"){
 
         for (prefix in prefixes) {
+            common.infoMsg("Checking is ${distribution} publish for prefix ${prefix}")
             retPrefix = matchPublished(server, distribution, prefix)
             if (retPrefix) {
-                echo "Can't be published for prefix ${retPrefix}"
+                echo "Can't be published for prefix ${retPrefix}. The distribution will be unpublished."
                 snapshotUnpublish(server, retPrefix, distribution)
                 common.successMsg("Distribution ${distribution} has been unpublished for prefix ${retPrefix}")
             }
@@ -154,6 +154,7 @@ node('python'){
         }
 
         for (prefix in prefixes) {
+            common.infoMsg("Publishing ${distribution} for prefix ${prefix} has been started.")
             snapshotPublish(server, snapshot, distribution, components, prefix)
             common.successMsg("Snapshot ${snapshot} has been published for prefix ${prefix}")
         }
