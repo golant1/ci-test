@@ -70,6 +70,8 @@ def matchPublished(server, distribution) {
         }
     }
 
+    return false
+
 /*    list_published.each {
         matched = it.find {key, value -> value == distribution}
         if (matched) {
@@ -143,15 +145,15 @@ node('python'){
         if (matchPublished(server, distribution)) {
             echo "Can't be published"
             for (prefix in prefixes) {
-                snapshotUnpublish(server, snapshot, distribution, components, prefix)
+                snapshotUnpublish(server, prefix, distribution)
                 common.successMsg("Distribution ${distribution} has been unpublished for prefix ${prefix}")
             }
         }
 
-/*        for (prefix in prefixes) {
+        for (prefix in prefixes) {
             echo (snapshotPublish(server, snapshot, distribution, components, prefix))
             common.successMsg("Snapshot ${snapshot} has been published for prefix ${prefix}")
-        } */
+        }
     }
    
     stage("Deploying environment and testing"){
