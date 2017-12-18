@@ -58,12 +58,26 @@ def restDel(master, uri, data = null) {
 def matchPublished(server, distribution) {
     def list_published = restGet(server, '/api/publish')
     def matched
+    def found_flag
 
-    list_published.each {
-        matched = it.find {key, value -> value == distribution}
-//        return matched
+    for (items in list_published) {
+        for (row in items) {
+            println ("items: ${items} key ${row.key} value ${row.value}")
+            if (row.key == 'Distribution' && row.value == distribution) {
+                println ("items1: ${items} key ${row.key} value ${row.value}")
+                return true
+            }
+        }
     }
-    return matched
+
+/*    list_published.each {
+        matched = it.find {key, value -> value == distribution}
+        if (matched) {
+            found_flag = matched
+        }        
+    }
+    return found_flag
+*/
 }
 
 def snapshotCreate(server, repo) {
