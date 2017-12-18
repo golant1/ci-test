@@ -55,7 +55,7 @@ def restDel(master, uri, data = null) {
     return restCall(master, uri, 'DELETE', data)
 }
 
-def matchPublished(server, distribution) {
+def matchPublished(server, distribution, prefix) {
     def list_published = restGet(server, '/api/publish')
     def matched
     def found_flag
@@ -63,9 +63,9 @@ def matchPublished(server, distribution) {
     for (items in list_published) {
         for (row in items) {
             println ("items: ${items} key ${row.key} value ${row.value}")
-            if (row.key == 'Distribution' && row.value == distribution) {
+            if (row.key == 'Distribution' && row.value == distribution && items['Prefix'] == prefix) {
                 println ("items1: ${items} key ${row.key} value ${row.value}")
-                return true
+                return items['Prefix']
             }
         }
     }
@@ -132,7 +132,8 @@ node('python'){
     def STACK_RECLASS_ADDRESS = 'https://gerrit.mcp.mirantis.net/salt-models/mcp-virtual-aio'
     def OPENSTACK_RELEASES = 'ocata,pike'
     def buildResult = [:]
-    def notToPromote   
+    def notToPromote
+    retPrefix
 
     stage("Creating snapshot from nightly repo"){
 //        snapshot = snapshotCreate(server, repo)
@@ -142,16 +143,18 @@ node('python'){
 
     stage("Publishing the snapshots"){
 
-        if (matchPublished(server, distribution)) {
-            echo "Can't be published"
-            for (prefix in prefixes) {
-                snapshotUnpublish(server, prefix, distribution)
-                common.successMsg("Distribution ${distribution} has been unpublished for prefix ${prefix}")
+        for (prefix in prefixes) {
+            retPrefix = matchPublished(server, distribution, prefix)
+            if (retPrefix) {
+                echo "Can't be published for prefix ${retPrefix}"
+                snapshotUnpublish(server, retPrefix, distribution)
+                common.successMsg("Distribution ${distribution} has been unpublished for prefix ${retPrefix}")
             }
+
         }
 
         for (prefix in prefixes) {
-            echo (snapshotPublish(server, snapshot, distribution, components, prefix))
+            snapshotPublish(server, snapshot, distribution, components, prefix)
             common.successMsg("Snapshot ${snapshot} has been published for prefix ${prefix}")
         }
     }
