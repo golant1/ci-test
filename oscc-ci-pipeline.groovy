@@ -141,22 +141,22 @@ node('python'){
     }
 
     stage("Publishing the snapshots"){
+        lock("aptly-api") {
 
-        for (prefix in prefixes) {
-            common.infoMsg("Checking ${distribution} is published for prefix ${prefix}")
-            retPrefix = matchPublished(server, distribution, prefix)
-            if (retPrefix) {
-                echo "Can't be published for prefix ${retPrefix}. The distribution will be unpublished."
-                snapshotUnpublish(server, retPrefix, distribution)
-                common.successMsg("Distribution ${distribution} has been unpublished for prefix ${retPrefix}")
+            for (prefix in prefixes) {
+                common.infoMsg("Checking ${distribution} is published for prefix ${prefix}")
+                retPrefix = matchPublished(server, distribution, prefix)
+
+                if (retPrefix) {
+                    echo "Can't be published for prefix ${retPrefix}. The distribution will be unpublished."
+                    snapshotUnpublish(server, retPrefix, distribution)
+                    common.successMsg("Distribution ${distribution} has been unpublished for prefix ${retPrefix}")
+                }
+                
+                common.infoMsg("Publishing ${distribution} for prefix ${prefix} is started.")
+                snapshotPublish(server, snapshot, distribution, components, prefix)
+                common.successMsg("Snapshot ${snapshot} has been published for prefix ${prefix}")
             }
-
-        }
-
-        for (prefix in prefixes) {
-            common.infoMsg("Publishing ${distribution} for prefix ${prefix} is started.")
-            snapshotPublish(server, snapshot, distribution, components, prefix)
-            common.successMsg("Snapshot ${snapshot} has been published for prefix ${prefix}")
         }
     }
    
