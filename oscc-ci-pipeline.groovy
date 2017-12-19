@@ -135,9 +135,11 @@ node('python'){
     def notToPromote
 
     stage("Creating snapshot from nightly repo"){
-        snapshot = snapshotCreate(server, repo)
-//        snapshot = 'ubuntu-xenial-salt-20171215130623-oscc-dev'
-        common.successMsg("Snapshot ${snapshot} has been created")
+        lock("aptly-api") {
+            snapshot = snapshotCreate(server, repo)
+//            snapshot = 'ubuntu-xenial-salt-20171215130623-oscc-dev'
+            common.successMsg("Snapshot ${snapshot} has been created")
+        }
     }
 
     stage("Publishing the snapshots"){
@@ -152,7 +154,7 @@ node('python'){
                     snapshotUnpublish(server, retPrefix, distribution)
                     common.successMsg("Distribution ${distribution} has been unpublished for prefix ${retPrefix}")
                 }
-                
+
                 common.infoMsg("Publishing ${distribution} for prefix ${prefix} is started.")
                 snapshotPublish(server, snapshot, distribution, components, prefix)
                 common.successMsg("Snapshot ${snapshot} has been published for prefix ${prefix}")
