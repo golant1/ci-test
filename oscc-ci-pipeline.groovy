@@ -136,8 +136,8 @@ node('python'){
 
     stage("Creating snapshot from nightly repo"){
         lock("aptly-api") {
-            snapshot = snapshotCreate(server, repo)
-//            snapshot = 'ubuntu-xenial-salt-20171215130623-oscc-dev'
+//            snapshot = snapshotCreate(server, repo)
+            snapshot = 'ubuntu-xenial-salt-20171219081745-oscc-dev'
             common.successMsg("Snapshot ${snapshot} has been created")
         }
     }
