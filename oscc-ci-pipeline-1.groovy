@@ -181,7 +181,7 @@ node('python'){
                         [$class: 'BooleanParameterValue', name: 'STACK_DELETE', value: false],
                         [$class: 'StringParameterValue', name: 'STACK_RECLASS_ADDRESS', value: STACK_RECLASS_ADDRESS],
                         [$class: 'StringParameterValue', name: 'STACK_RECLASS_BRANCH', value: "stable/${release}"],
-                    ],
+                    ]
 //                }
             } 
         } 
