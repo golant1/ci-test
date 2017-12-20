@@ -15,7 +15,7 @@ common = new com.mirantis.mk.Common()
  * Had to override REST functions from pipeline-library here due to 'slashy-string issue'. The issue
  * appears during object type conversion to string by toString() method and an each quote is escaped by slash.
  * However even if sent data was defined as String explicitely then restCall function doesn't set request
- * property Accept to 'application/json' and request are sent with webform header which is not acceptable
+ * property 'Content-Type' to 'application/json' and request are sent with webform header which is not acceptable
  * fot aptly api.
  **/
 
@@ -53,7 +53,7 @@ def restCall(master, uri, method = 'GET', data = null, headers = [:]) {
             return res
         }
     } else {
-        throw new Exception(connection.responseCode + ': ' + connection.inputStream.text)
+        throw (connection.responseCode + ': ' + connection.inputStream.text)
     }
 }
 
@@ -77,7 +77,7 @@ def matchPublished(server, distribution, prefix) {
         for (row in items) {
             println ("items: ${items} key ${row.key} value ${row.value}")
             if (prefix.tokenize(':')[1]) {
-                storage = prefix.tokenize(':')[0] + ":" + prefix.tokenize(':')[1]
+                storage = prefix.tokenize(':')[0] + ':' + prefix.tokenize(':')[1]
                 println ("storage: ${storage}")
 
                 if (row.key == 'Distribution' && row.value == distribution && items['Prefix'] == prefix.tokenize(':').last() && items['Storage'] == storage) {
@@ -98,7 +98,7 @@ def matchPublished(server, distribution, prefix) {
 
 def snapshotCreate(server, repo) {
     def now = new Date()
-    def ts = now.format("yyyyMMddHHmmss", TimeZone.getTimeZone('UTC'))
+    def ts = now.format('yyyyMMddHHmmss', TimeZone.getTimeZone('UTC'))
     def snapshot = "${repo}-${ts}-oscc-dev"
 
     String data = "{\"Name\": \"${snapshot}\"}"
@@ -125,9 +125,9 @@ def snapshotUnpublish(server, prefix, distribution) {
 
 node('python'){
     def server = [
-        'url': 'http://172.16.48.254:8084'
+        'url': 'http://172.16.48.254:8084',
     ]
-    def repo = 'ubuntu-xenial-salt'
+//    def repo = 'ubuntu-xenial-salt'
     def distribution = 'dev-os-salt-formulas'
     def components = 'dev-salt-formulas'
     def prefixes = ['oscc-dev', 's3:aptcdn:oscc-dev']
@@ -138,6 +138,8 @@ node('python'){
     def buildResult = [:]
     def notToPromote
     def DEPLOY_JOB_NAME = 'oscore-MCP1.1-virtual_mcp11_aio-ocata-stable'
+    def openstack_release
+    def testBuilds = [:]
 
     lock('aptly-api') {
 
@@ -167,30 +169,42 @@ node('python'){
 
     stage('Deploying environment and testing'){
         for (openstack_release in OPENSTACK_RELEASES.tokenize(',')) {
-            deployBuild = build(job: DEPLOY_JOB_NAME, propagate: false, parameters: [
-                [$class: 'StringParameterValue', name: 'EXTRA_REPO', value: "deb [arch=amd64] http://${tmp_repo_node_name}/oscc-dev ${distribution} ${components}"],
-                [$class: 'StringParameterValue', name: 'EXTRA_REPO_PRIORITY', value: '1200'],
-                [$class: 'StringParameterValue', name: 'EXTRA_REPO_PIN', value: "origin ${tmp_repo_node_name}"],
-                [$class: 'StringParameterValue', name: 'FORMULA_PKG_REVISION', value: 'nightly'],
-                [$class: 'BooleanParameterValue', name: 'STACK_DELETE', value: false],
-                [$class: 'StringParameterValue', name: 'STACK_RECLASS_ADDRESS', value: STACK_RECLASS_ADDRESS],
-                [$class: 'StringParameterValue', name: 'STACK_RECLASS_BRANCH', value: 'stable/' + openstack_release.replaceAll(' ','')],
-            ])
-            buildResult[openstack_release.replaceAll(' ','')] = deployBuild.result
+            def release = openstack_release.replaceAll(' ', '')
+            deploy_release["OpenStack ${release} deployment"] = {
+                node('oscore-testing') {
+                    testBuilds[release] = build job: DEPLOY_JOB_NAME, propagate: false, parameters: [
+                        [$class: 'StringParameterValue', name: 'EXTRA_REPO', value: "deb [arch=amd64] http://${tmp_repo_node_name}/oscc-dev ${distribution} ${components}"],
+                        [$class: 'StringParameterValue', name: 'EXTRA_REPO_PRIORITY', value: '1200'],
+                        [$class: 'StringParameterValue', name: 'EXTRA_REPO_PIN', value: "origin ${tmp_repo_node_name}"],
+                        [$class: 'StringParameterValue', name: 'FORMULA_PKG_REVISION', value: 'nightly'],
+                        [$class: 'BooleanParameterValue', name: 'STACK_DELETE', value: false],
+                        [$class: 'StringParameterValue', name: 'STACK_RECLASS_ADDRESS', value: STACK_RECLASS_ADDRESS],
+                        [$class: 'StringParameterValue', name: 'STACK_RECLASS_BRANCH', value: "stable/${release}"],
+                    ],
+                }
+            }
         }
     }
 
-    stage('Managing deployment results') {
-        notToPromote = buildResult.find {openstack_release, result -> result != 'SUCCESS'}
+    stage('Running parallel OpenStack deployment') {
+        parallel deploy_release
+    }
 
-        buildResult.each {openstack_release, result ->
-            println("${openstack_release}: ${result}")
+    stage('Managing deployment results') {
+        for (k in testBuilds.keySet()){
+            if(testBuilds[k].result != 'SUCCESS') { 
+                notToPromote = true
+            }
+            println(testBuilds[k] + ': ' + testBuilds[k].result)
         }
+
+//        notToPromote = buildResult.find { openstackrelease, result -> result != 'SUCCESS' }
+//        buildResult.each { openstackrelease, result -> println("${openstackrelease}: ${result}") }
     }
 
     stage('Promotion to testing repo'){
         if (notToPromote) {
-            echo 'Snapshot can't be promoted!!!'
+            echo 'Snapshot can not be promoted!!!'
         }
     }
 }
