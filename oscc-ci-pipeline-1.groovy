@@ -168,7 +168,7 @@ node('python'){
     }
 
 //    stage('Deploying environment and testing'){
-        for (openstack_release in OPENSTACK_RELEASES.tokenize(',')) {
+/*        for (openstack_release in OPENSTACK_RELEASES.tokenize(',')) {
             def release = openstack_release.replaceAll(' ', '')
             deploy_release["OpenStack ${release} deployment"] = {
                 node('oscore-testing') {
@@ -183,7 +183,7 @@ node('python'){
                     ],
                 }
             }
-        }
+        } */
 //    }
 
     stage('Running parallel OpenStack deployment') {
