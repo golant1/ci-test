@@ -140,6 +140,7 @@ node('python'){
     def DEPLOY_JOB_NAME = 'oscore-MCP1.1-virtual_mcp11_aio-ocata-stable'
     def openstack_release
     def testBuilds = [:]
+    def deploy_release = [:]
 
     lock('aptly-api') {
 
@@ -149,7 +150,7 @@ node('python'){
             common.successMsg("Snapshot ${snapshot} has been created")
         }
 
-        stage('Publishing the snapshots'){
+/*        stage('Publishing the snapshots'){
             for (prefix in prefixes) {
                 common.infoMsg("Checking ${distribution} is published for prefix ${prefix}")
                 retPrefix = matchPublished(server, distribution, prefix)
@@ -164,11 +165,11 @@ node('python'){
                 snapshotPublish(server, snapshot, distribution, components, prefix)
                 common.successMsg("Snapshot ${snapshot} has been published for prefix ${prefix}")
             }
-        }
+        } */
     }
 
 //    stage('Deploying environment and testing'){
-/*        for (openstack_release in OPENSTACK_RELEASES.tokenize(',')) {
+        for (openstack_release in OPENSTACK_RELEASES.tokenize(',')) {
             def release = openstack_release.replaceAll(' ', '')
             deploy_release["OpenStack ${release} deployment"] = {
                 node('oscore-testing') {
@@ -183,7 +184,7 @@ node('python'){
                     ],
                 }
             }
-        } */
+        } 
 //    }
 
     stage('Running parallel OpenStack deployment') {
