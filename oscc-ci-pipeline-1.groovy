@@ -172,7 +172,7 @@ node('python'){
             def release = openstack_release.replaceAll(' ', '')
             deploy_release["OpenStack ${release} deployment"] = {
                 node('oscore-testing') {
-                    testBuilds[release] = build job: DEPLOY_JOB_NAME, propagate: false, parameters: [
+                    testBuilds["${release}"] = build job: DEPLOY_JOB_NAME, propagate: false, parameters: [
                         [$class: 'StringParameterValue', name: 'EXTRA_REPO', value: "deb [arch=amd64] http://${tmp_repo_node_name}/oscc-dev ${distribution} ${components}"],
                         [$class: 'StringParameterValue', name: 'EXTRA_REPO_PRIORITY', value: '1200'],
                         [$class: 'StringParameterValue', name: 'EXTRA_REPO_PIN', value: "origin ${tmp_repo_node_name}"],
