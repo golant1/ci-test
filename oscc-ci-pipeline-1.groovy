@@ -197,7 +197,7 @@ node('python'){
             if (testBuilds[k].result != 'SUCCESS') {
                 notToPromote = true
             }
-            println(testBuilds[k] + ': ' + testBuilds[k].result)
+            println(k + ': ' + testBuilds[k].result)
         }
 
 //        notToPromote = buildResult.find { openstackrelease, result -> result != 'SUCCESS' }
