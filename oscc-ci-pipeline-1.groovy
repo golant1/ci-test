@@ -85,8 +85,8 @@ def matchPublished(server, distribution, prefix) {
                     return prefix
                 }
             } else {
-                if (row.key == 'Distribution' && row.value == distribution && items['Prefix'] == prefix.tokenize(':').last()) {
-                    println ("items1: ${items} key ${row.key} value ${row.value}")
+                if (row.key == 'Distribution' && row.value == distribution && items['Prefix'] == prefix.tokenize(':').last() && items['Storage'] == '') {
+                    println ("items2: ${items} key ${row.key} value ${row.value}")
                     return prefix
                 }
             }
@@ -129,15 +129,17 @@ node('python'){
     ]
 //    def repo = 'ubuntu-xenial-salt'
     def distribution = 'dev-os-salt-formulas'
-    def components = 'dev-salt-formulas'
-    def prefixes = ['oscc-dev', 's3:aptcdn:oscc-dev']
-    def tmp_repo_node_name = 'apt.mirantis.com'
-    def deployBuild
+    def components = 'salt-formulas'
+//    def prefixes = ['oscc-dev', 's3:aptcdn:oscc-dev']
+    def prefixes = ['oscc-dev']
+    def tmp_repo_node_name = 'apt.mcp.mirantis.net:8085'
+//    def deployBuild
     def STACK_RECLASS_ADDRESS = 'https://gerrit.mcp.mirantis.net/salt-models/mcp-virtual-aio'
     def OPENSTACK_RELEASES = 'ocata,pike'
-    def buildResult = [:]
+//    def buildResult = [:]
     def notToPromote
-    def DEPLOY_JOB_NAME = 'oscore-MCP1.1-virtual_mcp11_aio-ocata-stable'
+//    def DEPLOY_JOB_NAME = 'oscore-MCP1.1-test-release-nightly'
+    def DEPLOY_JOB_NAME = 'oscore-MCP1.1-virtual_mcp11_aio-pike-stable'
     def testBuilds = [:]
     def deploy_release = [:]
 
@@ -149,7 +151,7 @@ node('python'){
             common.successMsg("Snapshot ${snapshot} has been created")
         }
 
-/*        stage('Publishing the snapshots'){
+        stage('Publishing the snapshots'){
             for (prefix in prefixes) {
                 common.infoMsg("Checking ${distribution} is published for prefix ${prefix}")
                 retPrefix = matchPublished(server, distribution, prefix)
@@ -164,26 +166,26 @@ node('python'){
                 snapshotPublish(server, snapshot, distribution, components, prefix)
                 common.successMsg("Snapshot ${snapshot} has been published for prefix ${prefix}")
             }
-        } */
+        }
     }
 
     stage('Deploying environment and testing'){
         for (openstack_release in OPENSTACK_RELEASES.tokenize(',')) {
-            release = openstack_release.replaceAll(' ', '')
+            def release = openstack_release
             deploy_release["OpenStack ${release} deployment"] = {
                 node('oscore-testing') {
                     testBuilds["${release}"] = build job: DEPLOY_JOB_NAME, propagate: false, parameters: [
                         [$class: 'StringParameterValue', name: 'EXTRA_REPO', value: "deb [arch=amd64] http://${tmp_repo_node_name}/oscc-dev ${distribution} ${components}"],
                         [$class: 'StringParameterValue', name: 'EXTRA_REPO_PRIORITY', value: '1200'],
-                        [$class: 'StringParameterValue', name: 'EXTRA_REPO_PIN', value: "origin ${tmp_repo_node_name}"],
-                        [$class: 'StringParameterValue', name: 'FORMULA_PKG_REVISION', value: 'nightly'],
+                        [$class: 'StringParameterValue', name: 'EXTRA_REPO_PIN', value: "release c=${components}"],
+                        [$class: 'StringParameterValue', name: 'FORMULA_PKG_REVISION', value: 'stable'],
                         [$class: 'BooleanParameterValue', name: 'STACK_DELETE', value: false],
                         [$class: 'StringParameterValue', name: 'STACK_RECLASS_ADDRESS', value: STACK_RECLASS_ADDRESS],
                         [$class: 'StringParameterValue', name: 'STACK_RECLASS_BRANCH', value: "stable/${release}"],
                     ]
                 }
-            } 
-        } 
+            }
+        }
     }
 
     stage('Running parallel OpenStack deployment') {
@@ -191,8 +193,8 @@ node('python'){
     }
 
     stage('Managing deployment results') {
-        for (k in testBuilds.keySet()){
-            if(testBuilds[k].result != 'SUCCESS') { 
+        for (k in testBuilds.keySet()) {
+            if (testBuilds[k].result != 'SUCCESS') {
                 notToPromote = true
             }
             println(testBuilds[k] + ': ' + testBuilds[k].result)
@@ -205,6 +207,7 @@ node('python'){
     stage('Promotion to testing repo'){
         if (notToPromote) {
             echo 'Snapshot can not be promoted!!!'
+            currentBuild.result = 'FAILURE'
         }
     }
 }
