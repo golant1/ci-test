@@ -133,7 +133,7 @@ node('python'){
     ]
 //    def repo = 'ubuntu-xenial-salt'
     def DISTRIBUTION = 'dev-os-salt-formulas'
-    def components = 'salt-formulas'
+    def components = 'salt'
 //    def prefixes = ['oscc-dev', 's3:aptcdn:oscc-dev']
     def prefixes = ['oscc-dev']
     def tmp_repo_node_name = 'apt.mcp.mirantis.net:8085'
