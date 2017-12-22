@@ -159,8 +159,8 @@ node('python'){
             def ts = now.format('yyyyMMddHHmmss', TimeZone.getTimeZone('UTC'))
             def distribution = "${DISTRIBUTION}-${ts}"
 
-/*            for (prefix in prefixes) {
-                common.infoMsg("Checking ${distribution} is published for prefix ${prefix}")
+            for (prefix in prefixes) {
+/*                common.infoMsg("Checking ${distribution} is published for prefix ${prefix}")
                 retPrefix = matchPublished(server, distribution, prefix)
 
                 if (retPrefix) {
