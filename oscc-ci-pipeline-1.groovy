@@ -114,7 +114,7 @@ def snapshotPublish(server, snapshot, distribution, components, prefix) {
 
 //    String data = "{\"SourceKind\": \"snapshot\", \"Sources\": [{\"Name\": \"${snapshot}\", \"Component\": \"${components}\" }], \"Architectures\": [\"amd64\"], \"Distribution\": \"${distribution}\"}"
 
-    aptly.promotePublish(server, 'xenial/nightly', "${prefix}/${distribution}", 'false', components, '', '', '-d --timeout 1200', '')
+    aptly.promotePublish(server, 'xenial/nightly', "${prefix}/${distribution}", 'false', components, '', '', '-d --timeout 1200', '', '')
 
 //    return restPost(server, "/api/publish/${prefix}", data)
 
