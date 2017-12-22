@@ -146,6 +146,7 @@ node('python'){
     def DEPLOY_JOB_NAME = 'oscore-MCP1.1-virtual_mcp11_aio-pike-stable'
     def testBuilds = [:]
     def deploy_release = [:]
+    def distribution
 
     lock('aptly-api') {
 
@@ -158,7 +159,7 @@ node('python'){
         stage('Publishing the snapshots'){
             def now = new Date()
             def ts = now.format('yyyyMMddHHmmss', TimeZone.getTimeZone('UTC'))
-            def distribution = "${DISTRIBUTION}-${ts}"
+            distribution = "${DISTRIBUTION}-${ts}"
 
             for (prefix in prefixes) {
 /*                common.infoMsg("Checking ${distribution} is published for prefix ${prefix}")
