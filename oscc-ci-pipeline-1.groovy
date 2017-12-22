@@ -142,8 +142,8 @@ node('python'){
     def OPENSTACK_RELEASES = 'ocata,pike'
 //    def buildResult = [:]
     def notToPromote
-//    def DEPLOY_JOB_NAME = 'oscore-MCP1.1-test-release-nightly'
-    def DEPLOY_JOB_NAME = 'oscore-MCP1.1-virtual_mcp11_aio-pike-stable'
+    def DEPLOY_JOB_NAME = 'oscore-MCP1.1-test-release-nightly'
+//    def DEPLOY_JOB_NAME = 'oscore-MCP1.1-virtual_mcp11_aio-pike-stable'
     def testBuilds = [:]
     def deploy_release = [:]
     def distribution
