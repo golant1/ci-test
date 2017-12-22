@@ -109,12 +109,13 @@ def snapshotCreate(server, repo) {
     return snapshot
 }
 
-def snapshotPublish(server, snapshot, distribution, components, prefix) {
+def snapshotPublish(server, distribution, components, prefix) {
+//def snapshotPublish(server, snapshot, distribution, components, prefix) {
     def aptly = new com.mirantis.mk.Aptly()
 
 //    String data = "{\"SourceKind\": \"snapshot\", \"Sources\": [{\"Name\": \"${snapshot}\", \"Component\": \"${components}\" }], \"Architectures\": [\"amd64\"], \"Distribution\": \"${distribution}\"}"
 
-    aptly.promotePublish(server, 'xenial/nightly', "${prefix}/${distribution}", 'false', components, '', '', '-d --timeout 1200', '', '')
+    aptly.promotePublish(server['url'], 'xenial/nightly', "${prefix}/${distribution}", 'false', components, '', '', '-d --timeout 1200', '', '')
 
 //    return restPost(server, "/api/publish/${prefix}", data)
 
@@ -170,7 +171,8 @@ node('python'){
                 }
 */
                 common.infoMsg("Publishing ${distribution} for prefix ${prefix} is started.")
-                snapshotPublish(server, snapshot, distribution, components, prefix)
+//                snapshotPublish(server, snapshot, distribution, components, prefix)
+                snapshotPublish(server, distribution, components, prefix)
                 common.successMsg("Snapshot ${snapshot} has been published for prefix ${prefix}")
             }
         }
