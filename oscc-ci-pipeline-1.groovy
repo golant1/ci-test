@@ -113,7 +113,7 @@ def nightlySnapshot(server, distribution, prefix) {
                 }
             } else {
                 if (row.key == 'Distribution' && row.value == distribution && items['Prefix'] == prefix.tokenize(':').last() && items['Storage'] == '') {
-                    println ("items2: ${items} key ${row.key} value ${row.value}")
+                    println ("items2: ${items} key ${row.key} value ${row.value} sources " + items['Sources'])
                     return prefix
                 }
             }
@@ -188,7 +188,7 @@ node('python'){
             def ts = now.format('yyyyMMddHHmmss', TimeZone.getTimeZone('UTC'))
             distribution = "${DISTRIBUTION}-${ts}"
 
-            nightlySnapshot(server['url'],'xenial','nightly')
+            nightlySnapshot(server,'xenial','nightly')
 
             for (prefix in prefixes) {
 /*                common.infoMsg("Checking ${distribution} is published for prefix ${prefix}")
