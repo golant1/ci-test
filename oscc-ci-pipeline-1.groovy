@@ -139,7 +139,7 @@ def snapshotPackages(server, snapshot, packages_list) {
     println ("PKGS: ${pkgs}")
 
     for (package_pattern in packages_list.tokenize(',')) {
-        def pkg = pkgs.find ( item -> item.contains(package_pattern))
+        def pkg = pkgs.find { item -> item.contains(package_pattern) }
         println ("PKG1: ${package_pattern} ${pkg}")
 //        println ("PKGS: ${pkgs}")
     }
