@@ -114,6 +114,12 @@ def nightlySnapshot(server, distribution, prefix) {
             } else {
                 if (row.key == 'Distribution' && row.value == distribution && items['Prefix'] == prefix.tokenize(':').last() && items['Storage'] == '') {
                     println ("items2: ${items} key ${row.key} value ${row.value} sources " + items['Sources'])
+                    for (source in items['Sources']){
+                        println ("X1: ${source}")
+                        for (component in source) {
+                            println ("XXX ${component.key} YYY ${component.value} ZZZ ${component}")
+                        }
+                    }
                     return prefix
                 }
             }
