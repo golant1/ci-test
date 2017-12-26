@@ -96,6 +96,33 @@ def matchPublished(server, distribution, prefix) {
     return false
 }
 
+def nightlySnapshot(server, distribution, prefix) {
+    def list_published = restGet(server, '/api/publish')
+    def storage
+
+    for (items in list_published) {
+        for (row in items) {
+            println ("items: ${items} key ${row.key} value ${row.value}")
+            if (prefix.tokenize(':')[1]) {
+                storage = prefix.tokenize(':')[0] + ':' + prefix.tokenize(':')[1]
+                println ("storage: ${storage}")
+
+                if (row.key == 'Distribution' && row.value == distribution && items['Prefix'] == prefix.tokenize(':').last() && items['Storage'] == storage) {
+                    println ("items1: ${items} key ${row.key} value ${row.value}")
+                    return prefix
+                }
+            } else {
+                if (row.key == 'Distribution' && row.value == distribution && items['Prefix'] == prefix.tokenize(':').last() && items['Storage'] == '') {
+                    println ("items2: ${items} key ${row.key} value ${row.value}")
+                    return prefix
+                }
+            }
+        }
+    }
+
+    return false
+}
+
 def snapshotCreate(server, repo) {
     def now = new Date()
     def ts = now.format('yyyyMMddHHmmss', TimeZone.getTimeZone('UTC'))
@@ -161,6 +188,8 @@ node('python'){
             def ts = now.format('yyyyMMddHHmmss', TimeZone.getTimeZone('UTC'))
             distribution = "${DISTRIBUTION}-${ts}"
 
+            nightlySnapshot(server['url'],'xenial','nightly')
+
             for (prefix in prefixes) {
 /*                common.infoMsg("Checking ${distribution} is published for prefix ${prefix}")
                 retPrefix = matchPublished(server, distribution, prefix)
@@ -173,13 +202,13 @@ node('python'){
 */
                 common.infoMsg("Publishing ${distribution} for prefix ${prefix} is started.")
 //                snapshotPublish(server, snapshot, distribution, components, prefix)
-                snapshotPublish(server, distribution, components, prefix)
+//                snapshotPublish(server, distribution, components, prefix)
                 common.successMsg("Snapshot ${snapshot} has been published for prefix ${prefix}")
             }
         }
     }
 
-    stage('Deploying environment and testing'){
+/*    stage('Deploying environment and testing'){
         for (openstack_release in OPENSTACK_RELEASES.tokenize(',')) {
             def release = openstack_release
             deploy_release["OpenStack ${release} deployment"] = {
@@ -196,7 +225,7 @@ node('python'){
                 }
             }
         }
-    }
+    } */
 
     stage('Running parallel OpenStack deployment') {
         parallel deploy_release
