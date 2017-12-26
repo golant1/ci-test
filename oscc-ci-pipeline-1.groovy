@@ -135,16 +135,18 @@ def getnightlySnapshot(server, distribution, prefix, component) {
 
 def snapshotPackages(server, snapshot, packages_list) {
     def pkgs = restGet(server, "/api/snapshots/${snapshot}/packages")
+    def openstack_packages = []
 
     println ("PKGS: ${pkgs}")
 
     for (package_pattern in packages_list.tokenize(',')) {
         def pkg = pkgs.find { item -> item.contains(package_pattern) }
-        println ("PKG1: ${package_pattern} ${pkg}")
+        openstack_packages.add(pkg)
+//        println ("PKG1: ${package_pattern} ${pkg}")
 //        println ("PKGS: ${pkgs}")
     }
 
-    return pkgs
+    return openstack_packages
 
 }
 
@@ -216,7 +218,8 @@ node('python'){
 
             def nightlySnapshot = getnightlySnapshot(server, 'nightly', 'xenial', components)
 
-            snapshotPackages(server, nightlySnapshot, OPENSTACK_COMPONENTS_LIST)
+            println ("Z1: " + snapshotPackages(server, nightlySnapshot, OPENSTACK_COMPONENTS_LIST))
+            
 
             for (prefix in prefixes) {
 /*                common.infoMsg("Checking ${distribution} is published for prefix ${prefix}")
