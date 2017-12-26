@@ -155,7 +155,7 @@ def snapshotCreate(server, repo, package_refs = null) {
         println ("LISTSTRING: ${listString}")
         String data = "{\"Name\":\"${snapshot}\", \"Description\": \"OpenStack Core Components salt formulas CI\", \"PackageRefs\": [\"${listString}\"]}"
         echo "data: ${data}"
-        def resp = restPost(server, "/api/repos/snapshots", data)
+        def resp = restPost(server, "/api/snapshots", data)
         echo "response: ${resp}"
     } else {
         String data = "{\"Name\": \"${snapshot}\", \"Description\": \"OpenStack Core Components salt formulas CI\"}"
