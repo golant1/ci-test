@@ -214,8 +214,8 @@ node('python'){
             def snapshotpkglist = snapshotPackages(server, nightlySnapshot, OPENSTACK_COMPONENTS_LIST)
  
             println ("Z1: " + snapshotpkglist)
-//            snapshot = snapshotCreate(server, repo, snapshotpkglist)
-            snapshot = 'ubuntu-xenial-salt-20171226124107-oscc-dev'
+            snapshot = snapshotCreate(server, repo, snapshotpkglist)
+//            snapshot = 'ubuntu-xenial-salt-20171226124107-oscc-dev'
             common.successMsg("Snapshot ${snapshot} has been created")
         }
 
@@ -242,7 +242,7 @@ node('python'){
         }
     }
 
-/*    stage('Deploying environment and testing'){
+    stage('Deploying environment and testing'){
         for (openstack_release in OPENSTACK_RELEASES.tokenize(',')) {
             def release = openstack_release
             deploy_release["OpenStack ${release} deployment"] = {
@@ -251,6 +251,7 @@ node('python'){
                         [$class: 'StringParameterValue', name: 'EXTRA_REPO', value: "deb [arch=amd64] http://${tmp_repo_node_name}/oscc-dev ${distribution} ${components}"],
                         [$class: 'StringParameterValue', name: 'EXTRA_REPO_PRIORITY', value: '1300'],
                         [$class: 'StringParameterValue', name: 'EXTRA_REPO_PIN', value: "release c=${components}"],
+                        [$class: 'StringParameterValue', name: 'BOOTSTRAP_EXTRA_REPO_PARAMS', value: "deb [arch=amd64] http://${tmp_repo_node_name}/oscc-dev ${distribution} ${components},1300,release c=${components}"],
                         [$class: 'StringParameterValue', name: 'FORMULA_PKG_REVISION', value: 'stable'],
                         [$class: 'BooleanParameterValue', name: 'STACK_DELETE', value: false],
                         [$class: 'StringParameterValue', name: 'STACK_RECLASS_ADDRESS', value: STACK_RECLASS_ADDRESS],
@@ -259,7 +260,7 @@ node('python'){
                 }
             }
         }
-    } */
+    } 
 
     stage('Running parallel OpenStack deployment') {
         parallel deploy_release
