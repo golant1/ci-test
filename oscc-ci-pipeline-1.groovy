@@ -153,7 +153,7 @@ def snapshotCreate(server, repo, package_refs = null) {
     if (package_refs) {
         def listString = package_refs.toListString()
         println ("LISTSTRING: ${listString}")
-        String data = "{\"Name\":\"${snapshot}\", \"Description\": \"OpenStack Core Components salt formulas CI\", \"PackageRefs\": [\"Psource pyspi 0.6.1-1.3 3a8b37cbd9a3559e\"]}"
+        String data = "{\"Name\":\"${snapshot}\", \"Description\": \"OpenStack Core Components salt formulas CI\", \"PackageRefs\": [\"${listString}\"]}"
     } else {
         String data = "{\"Name\": \"${snapshot}\", \"Description\": \"OpenStack Core Components salt formulas CI\"}"
     }
@@ -187,7 +187,7 @@ node('python'){
     def server = [
         'url': 'http://172.16.48.254:8084',
     ]
-//    def repo = 'ubuntu-xenial-salt'
+    def repo = 'ubuntu-xenial-salt'
     def DISTRIBUTION = 'dev-os-salt-formulas'
     def components = 'salt'
 //    def prefixes = ['oscc-dev', 's3:aptcdn:oscc-dev']
