@@ -116,9 +116,12 @@ def nightlySnapshot(server, distribution, prefix) {
                     println ("items2: ${items} key ${row.key} value ${row.value} sources " + items['Sources'])
                     for (source in items['Sources']){
                         println ("X1: ${source}")
-                        for (component in source) {
-                            println ("XXX ${component.key} YYY ${component.value} ZZZ ${component}")
+                        if (source['Component'] == 'salt') {
+                            println ("X2: " + source['Name'])
                         }
+/*                        for (component in source) {
+                            println ("XXX ${component.key} YYY ${component.value} ZZZ ${component}")
+                        } */
                     }
                     return prefix
                 }
