@@ -188,7 +188,7 @@ node('python'){
             def ts = now.format('yyyyMMddHHmmss', TimeZone.getTimeZone('UTC'))
             distribution = "${DISTRIBUTION}-${ts}"
 
-            nightlySnapshot(server,'xenial','nightly')
+            nightlySnapshot(server,'nightly', 'xenial')
 
             for (prefix in prefixes) {
 /*                common.infoMsg("Checking ${distribution} is published for prefix ${prefix}")
