@@ -151,7 +151,7 @@ def snapshotCreate(server, repo, package_refs = null) {
     def snapshot = "${repo}-${ts}-oscc-dev"
 
     if (package_refs) {
-        def listString = package_refs.toListString()
+        String listString = package_refs.join(",")
         println ("LISTSTRING: ${listString}")
         String data = "{\"Name\":\"${snapshot}\", \"Description\": \"OpenStack Core Components salt formulas CI\", \"PackageRefs\": [\"${listString}\"]}"
     } else {
