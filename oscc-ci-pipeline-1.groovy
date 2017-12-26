@@ -167,15 +167,15 @@ def snapshotCreate(server, repo, package_refs = null) {
     return snapshot
 }
 
-def snapshotPublish(server, distribution, components, prefix) {
+def snapshotPublish(server, snapshot = null, distribution, components, prefix) {
 //def snapshotPublish(server, snapshot, distribution, components, prefix) {
     def aptly = new com.mirantis.mk.Aptly()
+    if (snapshot) {
+        String data = "{\"SourceKind\": \"snapshot\", \"Sources\": [{\"Name\": \"${snapshot}\", \"Component\": \"${components}\" }], \"Architectures\": [\"amd64\"], \"Distribution\": \"${distribution}\"}"
+        return restPost(server, "/api/publish/${prefix}", data)
+    } 
 
-//    String data = "{\"SourceKind\": \"snapshot\", \"Sources\": [{\"Name\": \"${snapshot}\", \"Component\": \"${components}\" }], \"Architectures\": [\"amd64\"], \"Distribution\": \"${distribution}\"}"
-
-    aptly.promotePublish(server['url'], 'xenial/nightly', "${prefix}/${distribution}", 'false', components, '', '', '-d --timeout 1200', '', '')
-
-//    return restPost(server, "/api/publish/${prefix}", data)
+//    aptly.promotePublish(server['url'], 'xenial/nightly', "${prefix}/${distribution}", 'false', components, '', '', '-d --timeout 1200', '', '')
 
 }
 
@@ -214,8 +214,8 @@ node('python'){
             def snapshotpkglist = snapshotPackages(server, nightlySnapshot, OPENSTACK_COMPONENTS_LIST)
  
             println ("Z1: " + snapshotpkglist)
-            snapshot = snapshotCreate(server, repo, snapshotpkglist)
-//            snapshot = 'ubuntu-xenial-salt-20171219081745-oscc-dev'
+//            snapshot = snapshotCreate(server, repo, snapshotpkglist)
+            snapshot = 'ubuntu-xenial-salt-20171226124107-oscc-dev'
             common.successMsg("Snapshot ${snapshot} has been created")
         }
 
@@ -235,7 +235,7 @@ node('python'){
                 }
 */
                 common.infoMsg("Publishing ${distribution} for prefix ${prefix} is started.")
-//                snapshotPublish(server, snapshot, distribution, components, prefix)
+                snapshotPublish(server, snapshot, distribution, components, prefix)
 //                snapshotPublish(server, distribution, components, prefix)
                 common.successMsg("Snapshot ${snapshot} has been published for prefix ${prefix}")
             }
