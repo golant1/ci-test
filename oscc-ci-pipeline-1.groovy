@@ -111,7 +111,7 @@ def getnightlySnapshot(server, distribution, prefix, component) {
                     println ("items1: ${items} key ${row.key} value ${row.value}")
                     for (source in items['Sources']){
                         if (source['Component'] == component) {
-                            println ("X2: " + source['Name'])
+                            println ('X2: ' + source['Name'])
                             return source['Name']
                         }
                     }
@@ -121,7 +121,7 @@ def getnightlySnapshot(server, distribution, prefix, component) {
                     println ("items2: ${items} key ${row.key} value ${row.value} sources " + items['Sources'])
                     for (source in items['Sources']){
                         if (source['Component'] == component) {
-                            println ("X3: " + source['Name'])
+                            println ('X3: ' + source['Name'])
                             return source['Name']
                         }
                     }
@@ -133,11 +133,11 @@ def getnightlySnapshot(server, distribution, prefix, component) {
     return false
 }
 
-def snapshotPackages(server, snapshot, packages_list) {
+def snapshotPackages(server, snapshot, packagesList) {
     def pkgs = restGet(server, "/api/snapshots/${snapshot}/packages")
     def openstack_packages = []
 
-    for (package_pattern in packages_list.tokenize(',')) {
+    for (package_pattern in packagesList.tokenize(',')) {
         def pkg = pkgs.find { item -> item.contains(package_pattern) }
         openstack_packages.add(pkg)
     }
@@ -145,17 +145,17 @@ def snapshotPackages(server, snapshot, packages_list) {
     return openstack_packages
 }
 
-def snapshotCreate(server, repo, package_refs = null) {
+def snapshotCreate(server, repo, packageRefs = null) {
     def now = new Date()
     def ts = now.format('yyyyMMddHHmmss', TimeZone.getTimeZone('UTC'))
     def snapshot = "${repo}-${ts}-oscc-dev"
 
-    if (package_refs) {
-        String listString = package_refs.join("\",\"")
+    if (packageRefs) {
+        String listString = packageRefs.join('\",\"')
         println ("LISTSTRING: ${listString}")
         String data = "{\"Name\":\"${snapshot}\", \"Description\": \"OpenStack Core Components salt formulas CI\", \"PackageRefs\": [\"${listString}\"]}"
         echo "data: ${data}"
-        def resp = restPost(server, "/api/snapshots", data)
+        def resp = restPost(server, '/api/snapshots', data)
         echo "response: ${resp}"
     } else {
         String data = "{\"Name\": \"${snapshot}\", \"Description\": \"OpenStack Core Components salt formulas CI\"}"
@@ -169,11 +169,11 @@ def snapshotCreate(server, repo, package_refs = null) {
 
 def snapshotPublish(server, snapshot = null, distribution, components, prefix) {
 //def snapshotPublish(server, snapshot, distribution, components, prefix) {
-    def aptly = new com.mirantis.mk.Aptly()
+//    def aptly = new com.mirantis.mk.Aptly()
     if (snapshot) {
         String data = "{\"SourceKind\": \"snapshot\", \"Sources\": [{\"Name\": \"${snapshot}\", \"Component\": \"${components}\" }], \"Architectures\": [\"amd64\"], \"Distribution\": \"${distribution}\"}"
         return restPost(server, "/api/publish/${prefix}", data)
-    } 
+    }
 
 //    aptly.promotePublish(server['url'], 'xenial/nightly', "${prefix}/${distribution}", 'false', components, '', '', '-d --timeout 1200', '', '')
 
@@ -212,8 +212,8 @@ node('python'){
         stage('Creating snapshot from nightly repo'){
             def nightlySnapshot = getnightlySnapshot(server, 'nightly', 'xenial', components)
             def snapshotpkglist = snapshotPackages(server, nightlySnapshot, OPENSTACK_COMPONENTS_LIST)
- 
-            println ("Z1: " + snapshotpkglist)
+
+            println ('Z1: ' + snapshotpkglist)
             snapshot = snapshotCreate(server, repo, snapshotpkglist)
 //            snapshot = 'ubuntu-xenial-salt-20171226124107-oscc-dev'
             common.successMsg("Snapshot ${snapshot} has been created")
@@ -260,7 +260,7 @@ node('python'){
                 }
             }
         }
-    } 
+    }
 
     stage('Running parallel OpenStack deployment') {
         parallel deploy_release
