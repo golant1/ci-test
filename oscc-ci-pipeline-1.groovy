@@ -105,27 +105,19 @@ def getnightlySnapshot(server, distribution, prefix, component) {
             println ("items: ${items} key ${row.key} value ${row.value}")
             if (prefix.tokenize(':')[1]) {
                 storage = prefix.tokenize(':')[0] + ':' + prefix.tokenize(':')[1]
-//                println ("storage: ${storage}")
+                println ("storage: ${storage}")
+            } else {
+                storage = ''
+            }
 
-                if (row.key == 'Distribution' && row.value == distribution && items['Prefix'] == prefix.tokenize(':').last() && items['Storage'] == storage) {
-                    println ("items1: ${items} key ${row.key} value ${row.value}")
+            if (row.key == 'Distribution' && row.value == distribution && items['Prefix'] == prefix.tokenize(':').last() && items['Storage'] == storage) {
+                println ("items1: ${items} key ${row.key} value ${row.value}")
                     for (source in items['Sources']){
                         if (source['Component'] == component) {
                             println ('X2: ' + source['Name'])
                             return source['Name']
                         }
                     }
-                }
-            } else {
-                if (row.key == 'Distribution' && row.value == distribution && items['Prefix'] == prefix.tokenize(':').last() && items['Storage'] == '') {
-                    println ("items2: ${items} key ${row.key} value ${row.value} sources " + items['Sources'])
-                    for (source in items['Sources']){
-                        if (source['Component'] == component) {
-                            println ('X3: ' + source['Name'])
-                            return source['Name']
-                        }
-                    }
-                }
             }
         }
     }
@@ -214,7 +206,7 @@ node('python'){
             def snapshotpkglist = snapshotPackages(server, nightlySnapshot, OPENSTACK_COMPONENTS_LIST)
 
             println ('Z1: ' + snapshotpkglist)
-            snapshot = snapshotCreate(server, repo, snapshotpkglist)
+//            snapshot = snapshotCreate(server, repo, snapshotpkglist)
 //            snapshot = 'ubuntu-xenial-salt-20171226124107-oscc-dev'
             common.successMsg("Snapshot ${snapshot} has been created")
         }
@@ -235,7 +227,7 @@ node('python'){
                 }
 */
                 common.infoMsg("Publishing ${distribution} for prefix ${prefix} is started.")
-                snapshotPublish(server, snapshot, distribution, components, prefix)
+// //                snapshotPublish(server, snapshot, distribution, components, prefix)
 //                snapshotPublish(server, distribution, components, prefix)
                 common.successMsg("Snapshot ${snapshot} has been published for prefix ${prefix}")
             }
@@ -250,8 +242,8 @@ node('python'){
                     testBuilds["${release}"] = build job: DEPLOY_JOB_NAME, propagate: false, parameters: [
                         [$class: 'StringParameterValue', name: 'EXTRA_REPO', value: "deb [arch=amd64] http://${tmp_repo_node_name}/oscc-dev ${distribution} ${components}"],
                         [$class: 'StringParameterValue', name: 'EXTRA_REPO_PRIORITY', value: '1300'],
-                        [$class: 'StringParameterValue', name: 'EXTRA_REPO_PIN', value: "release c=${components}"],
-                        [$class: 'StringParameterValue', name: 'BOOTSTRAP_EXTRA_REPO_PARAMS', value: "deb [arch=amd64] http://${tmp_repo_node_name}/oscc-dev ${distribution} ${components},1300,release c=${components}"],
+                        [$class: 'StringParameterValue', name: 'EXTRA_REPO_PIN', value: "release n=${distribution}"],
+                        [$class: 'StringParameterValue', name: 'BOOTSTRAP_EXTRA_REPO_PARAMS', value: "deb [arch=amd64] http://${tmp_repo_node_name}/oscc-dev ${distribution} ${components},1300,release n=${distribution}"],
                         [$class: 'StringParameterValue', name: 'FORMULA_PKG_REVISION', value: 'stable'],
                         [$class: 'BooleanParameterValue', name: 'STACK_DELETE', value: false],
                         [$class: 'StringParameterValue', name: 'STACK_RECLASS_ADDRESS', value: STACK_RECLASS_ADDRESS],
