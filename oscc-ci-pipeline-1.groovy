@@ -137,27 +137,29 @@ def snapshotPackages(server, snapshot, packages_list) {
     def pkgs = restGet(server, "/api/snapshots/${snapshot}/packages")
     def openstack_packages = []
 
-    println ("PKGS: ${pkgs}")
-
     for (package_pattern in packages_list.tokenize(',')) {
         def pkg = pkgs.find { item -> item.contains(package_pattern) }
         openstack_packages.add(pkg)
-//        println ("PKG1: ${package_pattern} ${pkg}")
-//        println ("PKGS: ${pkgs}")
     }
 
     return openstack_packages
-
 }
 
-def snapshotCreate(server, repo) {
+def snapshotCreate(server, repo, package_refs = null) {
     def now = new Date()
     def ts = now.format('yyyyMMddHHmmss', TimeZone.getTimeZone('UTC'))
     def snapshot = "${repo}-${ts}-oscc-dev"
 
-    String data = "{\"Name\": \"${snapshot}\"}"
+    if (package_refs) {
+        def listString = package_refs.toListString()
+        println ("LISTSTRING: ${listString}")
+        String data = "{\"Name\":\"${snapshot}\", \"Description\": \"OpenStack Core Components salt formulas CI\", \"PackageRefs\": [\"Psource pyspi 0.6.1-1.3 3a8b37cbd9a3559e\"]}"
+    } else {
+        String data = "{\"Name\": \"${snapshot}\", \"Description\": \"OpenStack Core Components salt formulas CI\"}"
+    }
 
-    resp = restPost(server, "/api/repos/${repo}/snapshots", data)
+//    resp = restPost(server, "/api/repos/${repo}/snapshots", data)
+    echo "data: ${data}"
     echo "response: ${resp}"
 
     return snapshot
@@ -206,8 +208,12 @@ node('python'){
     lock('aptly-api') {
 
         stage('Creating snapshot from nightly repo'){
-//            snapshot = snapshotCreate(server, repo)
-            snapshot = 'ubuntu-xenial-salt-20171219081745-oscc-dev'
+            def nightlySnapshot = getnightlySnapshot(server, 'nightly', 'xenial', components)
+            def snapshotpkglist = snapshotPackages(server, nightlySnapshot, OPENSTACK_COMPONENTS_LIST)
+ 
+            println ("Z1: " + snapshotpkglist)
+            snapshot = snapshotCreate(server, repo, snapshotpkglist)
+//            snapshot = 'ubuntu-xenial-salt-20171219081745-oscc-dev'
             common.successMsg("Snapshot ${snapshot} has been created")
         }
 
@@ -215,11 +221,6 @@ node('python'){
             def now = new Date()
             def ts = now.format('yyyyMMddHHmmss', TimeZone.getTimeZone('UTC'))
             distribution = "${DISTRIBUTION}-${ts}"
-
-            def nightlySnapshot = getnightlySnapshot(server, 'nightly', 'xenial', components)
-
-            println ("Z1: " + snapshotPackages(server, nightlySnapshot, OPENSTACK_COMPONENTS_LIST))
-            
 
             for (prefix in prefixes) {
 /*                common.infoMsg("Checking ${distribution} is published for prefix ${prefix}")
