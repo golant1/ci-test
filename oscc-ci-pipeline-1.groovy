@@ -105,7 +105,7 @@ def getnightlySnapshot(server, distribution, prefix, component) {
             println ("items: ${items} key ${row.key} value ${row.value}")
             if (prefix.tokenize(':')[1]) {
                 storage = prefix.tokenize(':')[0] + ':' + prefix.tokenize(':')[1]
-                println ("storage: ${storage}")
+//                println ("storage: ${storage}")
 
                 if (row.key == 'Distribution' && row.value == distribution && items['Prefix'] == prefix.tokenize(':').last() && items['Storage'] == storage) {
                     println ("items1: ${items} key ${row.key} value ${row.value}")
@@ -121,7 +121,7 @@ def getnightlySnapshot(server, distribution, prefix, component) {
                     println ("items2: ${items} key ${row.key} value ${row.value} sources " + items['Sources'])
                     for (source in items['Sources']){
                         if (source['Component'] == component) {
-                            println ("X2: " + source['Name'])
+                            println ("X3: " + source['Name'])
                             return source['Name']
                         }
                     }
@@ -133,10 +133,15 @@ def getnightlySnapshot(server, distribution, prefix, component) {
     return false
 }
 
-def snapshotPackages(server, snapshot) {
+def snapshotPackages(server, snapshot, packages_list) {
     def pkgs = restGet(server, "/api/snapshots/${snapshot}/packages")
 
     println ("PKGS: ${pkgs}")
+
+    for (package_pattern in packages_list.tokenize(',')) {
+        println ("PKG1: ${package_pattern}")
+//        println ("PKGS: ${pkgs}")
+    }
 
     return pkgs
 
@@ -186,6 +191,7 @@ node('python'){
 //    def deployBuild
     def STACK_RECLASS_ADDRESS = 'https://gerrit.mcp.mirantis.net/salt-models/mcp-virtual-aio'
     def OPENSTACK_RELEASES = 'ocata,pike'
+    def OPENSTACK_COMPONENTS_LIST = 'nova,cinder,glance,keystone,horizon,neutron,designate,heat,ironic,barbican'
 //    def buildResult = [:]
     def notToPromote
     def DEPLOY_JOB_NAME = 'oscore-MCP1.1-test-release-nightly'
@@ -209,7 +215,7 @@ node('python'){
 
             def nightlySnapshot = getnightlySnapshot(server, 'nightly', 'xenial', components)
 
-            snapshotPackages(server, nightlySnapshot)
+            snapshotPackages(server, nightlySnapshot, OPENSTACK_COMPONENTS_LIST)
 
             for (prefix in prefixes) {
 /*                common.infoMsg("Checking ${distribution} is published for prefix ${prefix}")
