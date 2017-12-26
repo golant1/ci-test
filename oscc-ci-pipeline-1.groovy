@@ -151,7 +151,7 @@ def snapshotCreate(server, repo, package_refs = null) {
     def snapshot = "${repo}-${ts}-oscc-dev"
 
     if (package_refs) {
-        String listString = package_refs.join("],[")
+        String listString = package_refs.join("\"],[\"")
         println ("LISTSTRING: ${listString}")
         String data = "{\"Name\":\"${snapshot}\", \"Description\": \"OpenStack Core Components salt formulas CI\", \"PackageRefs\": [\"${listString}\"]}"
         echo "data: ${data}"
@@ -161,7 +161,7 @@ def snapshotCreate(server, repo, package_refs = null) {
     }
 
 //    resp = restPost(server, "/api/repos/${repo}/snapshots", data)
-    echo "response: ${resp}"
+//    echo "response: ${resp}"
 
     return snapshot
 }
