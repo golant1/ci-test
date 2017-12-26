@@ -96,7 +96,7 @@ def matchPublished(server, distribution, prefix) {
     return false
 }
 
-def nightlySnapshot(server, distribution, prefix) {
+def getnightlySnapshot(server, distribution, prefix, component) {
     def list_published = restGet(server, '/api/publish')
     def storage
 
@@ -115,8 +115,8 @@ def nightlySnapshot(server, distribution, prefix) {
                 if (row.key == 'Distribution' && row.value == distribution && items['Prefix'] == prefix.tokenize(':').last() && items['Storage'] == '') {
                     println ("items2: ${items} key ${row.key} value ${row.value} sources " + items['Sources'])
                     for (source in items['Sources']){
-                        println ("X1: ${source}")
-                        if (source['Component'] == 'salt') {
+//                        println ("X1: ${source}")
+                        if (source['Component'] == component) {
                             println ("X2: " + source['Name'])
                         }
 /*                        for (component in source) {
@@ -197,7 +197,7 @@ node('python'){
             def ts = now.format('yyyyMMddHHmmss', TimeZone.getTimeZone('UTC'))
             distribution = "${DISTRIBUTION}-${ts}"
 
-            nightlySnapshot(server,'nightly', 'xenial')
+            getnightlySnapshot(server, 'nightly', 'xenial', components)
 
             for (prefix in prefixes) {
 /*                common.infoMsg("Checking ${distribution} is published for prefix ${prefix}")
