@@ -69,61 +69,51 @@ def restDel(master, uri, data = null) {
     return restCall(master, uri, 'DELETE', data)
 }
 
-def matchPublished(server, distribution, prefix) {
-    def list_published = restGet(server, '/api/publish')
-    def storage
-
-    for (items in list_published) {
-        for (row in items) {
-            println ("items: ${items} key ${row.key} value ${row.value}")
-            if (prefix.tokenize(':')[1]) {
-                storage = prefix.tokenize(':')[0] + ':' + prefix.tokenize(':')[1]
-                println ("storage: ${storage}")
-
-                if (row.key == 'Distribution' && row.value == distribution && items['Prefix'] == prefix.tokenize(':').last() && items['Storage'] == storage) {
-                    println ("items1: ${items} key ${row.key} value ${row.value}")
-                    return prefix
-                }
-            } else {
-                if (row.key == 'Distribution' && row.value == distribution && items['Prefix'] == prefix.tokenize(':').last() && items['Storage'] == '') {
-                    println ("items2: ${items} key ${row.key} value ${row.value}")
-                    return prefix
-                }
-            }
-        }
-    }
-
-    return false
-}
-
+/**
+ * The function returen name of the snapshot belongs to
+ * xenial/nightly repo considering the prefix with storage.
+ *
+ * @param server        URI the server to connect to aptly API
+ * @param destribution  Destiribution of the repo which have to be found
+ * @param prefix        Prefix of the repo including storage eg. prefix or s3:aptcdn:prefix
+ * @param component     Component of the repo
+ *
+ * @return snapshot name
+ **/
 def getnightlySnapshot(server, distribution, prefix, component) {
     def list_published = restGet(server, '/api/publish')
     def storage
 
     for (items in list_published) {
         for (row in items) {
-            println ("items: ${items} key ${row.key} value ${row.value}")
             if (prefix.tokenize(':')[1]) {
                 storage = prefix.tokenize(':')[0] + ':' + prefix.tokenize(':')[1]
-                println ("storage: ${storage}")
             } else {
                 storage = ''
             }
 
             if (row.key == 'Distribution' && row.value == distribution && items['Prefix'] == prefix.tokenize(':').last() && items['Storage'] == storage) {
-                println ("items1: ${items} key ${row.key} value ${row.value}")
-                    for (source in items['Sources']){
-                        if (source['Component'] == component) {
-                            println ('X2: ' + source['Name'])
-                            return source['Name']
-                        }
+                for (source in items['Sources']){
+                    if (source['Component'] == component) {
+                        println ('Snapshot belongs to xenial/nightly: ' + source['Name'])
+                        return source['Name']
                     }
+                }
             }
         }
     }
 
     return false
 }
+
+/**
+ * Returns list of the packages matched to pattern and
+ * belonged to particular snapshot
+ *
+ * @param server        URI of the server insluding port and protocol
+ * @param snapshot      Snapshot to check
+ * @param packagesList  Pattern of the components to be compared
+ **/
 
 def snapshotPackages(server, snapshot, packagesList) {
     def pkgs = restGet(server, "/api/snapshots/${snapshot}/packages")
@@ -137,6 +127,12 @@ def snapshotPackages(server, snapshot, packagesList) {
     return openstack_packages
 }
 
+/**
+ * Creates snapshot of the repo or package refs
+ * @param server        URI of the server insluding port and protocol
+ * @param repo          Local repo name
+ * @param packageRefs   List of the packages are going to be included into the snapshot
+ **/
 def snapshotCreate(server, repo, packageRefs = null) {
     def now = new Date()
     def ts = now.format('yyyyMMddHHmmss', TimeZone.getTimeZone('UTC'))
@@ -144,23 +140,30 @@ def snapshotCreate(server, repo, packageRefs = null) {
 
     if (packageRefs) {
         String listString = packageRefs.join('\",\"')
-        println ("LISTSTRING: ${listString}")
+//        println ("LISTSTRING: ${listString}")
         String data = "{\"Name\":\"${snapshot}\", \"Description\": \"OpenStack Core Components salt formulas CI\", \"PackageRefs\": [\"${listString}\"]}"
-        echo "data: ${data}"
+        echo "HTTP body is going to be sent: ${data}"
         def resp = restPost(server, '/api/snapshots', data)
-        echo "response: ${resp}"
+        echo "Response: ${resp}"
     } else {
         String data = "{\"Name\": \"${snapshot}\", \"Description\": \"OpenStack Core Components salt formulas CI\"}"
-        echo "data: ${data}"
+        echo "HTTP body is going to be sent: ${data}"
         def resp = restPost(server, "/api/repos/${repo}/snapshots", data)
-        echo "response: ${resp}"
+        echo "Response: ${resp}"
     }
 
     return snapshot
 }
 
+/**
+ * Publishes the snapshot accodgin to distribution, components and prefix
+ * @param server        URI of the server insluding port and protocol
+ * @param snapshot      Snapshot is going to be published
+ * @param distribution  Distribution for the published repo
+ * @param components    Component for the published repo
+ * @param prefix        Prefix for thepubslidhed repo including storage
+ **/
 def snapshotPublish(server, snapshot = null, distribution, components, prefix) {
-//def snapshotPublish(server, snapshot, distribution, components, prefix) {
 //    def aptly = new com.mirantis.mk.Aptly()
     if (snapshot) {
         String data = "{\"SourceKind\": \"snapshot\", \"Sources\": [{\"Name\": \"${snapshot}\", \"Component\": \"${components}\" }], \"Architectures\": [\"amd64\"], \"Distribution\": \"${distribution}\"}"
@@ -187,7 +190,6 @@ node('python'){
 //    def prefixes = ['oscc-dev', 's3:aptcdn:oscc-dev']
     def prefixes = ['oscc-dev']
     def tmp_repo_node_name = 'apt.mcp.mirantis.net:8085'
-//    def deployBuild
     def STACK_RECLASS_ADDRESS = 'https://gerrit.mcp.mirantis.net/salt-models/mcp-virtual-aio'
     def OPENSTACK_RELEASES = 'ocata,pike'
     def OPENSTACK_COMPONENTS_LIST = 'nova,cinder,glance,keystone,horizon,neutron,designate,heat,ironic,barbican'
@@ -205,10 +207,9 @@ node('python'){
             def nightlySnapshot = getnightlySnapshot(server, 'nightly', 'xenial', components)
             def snapshotpkglist = snapshotPackages(server, nightlySnapshot, OPENSTACK_COMPONENTS_LIST)
 
-            println ('Z1: ' + snapshotpkglist)
-//            snapshot = snapshotCreate(server, repo, snapshotpkglist)
+            snapshot = snapshotCreate(server, repo, snapshotpkglist)
 //            snapshot = 'ubuntu-xenial-salt-20171226124107-oscc-dev'
-            common.successMsg("Snapshot ${snapshot} has been created")
+            common.successMsg("Snapshot ${snapshot} has been created for packages: ${snapshotpkglist}")
         }
 
         stage('Publishing the snapshots'){
@@ -217,18 +218,8 @@ node('python'){
             distribution = "${DISTRIBUTION}-${ts}"
 
             for (prefix in prefixes) {
-/*                common.infoMsg("Checking ${distribution} is published for prefix ${prefix}")
-                retPrefix = matchPublished(server, distribution, prefix)
-
-                if (retPrefix) {
-                    echo "Can't be published for prefix ${retPrefix}. The distribution will be unpublished."
-                    snapshotUnpublish(server, retPrefix, distribution)
-                    common.successMsg("Distribution ${distribution} has been unpublished for prefix ${retPrefix}")
-                }
-*/
                 common.infoMsg("Publishing ${distribution} for prefix ${prefix} is started.")
-// //                snapshotPublish(server, snapshot, distribution, components, prefix)
-//                snapshotPublish(server, distribution, components, prefix)
+                snapshotPublish(server, snapshot, distribution, components, prefix)
                 common.successMsg("Snapshot ${snapshot} has been published for prefix ${prefix}")
             }
         }
