@@ -109,27 +109,37 @@ def getnightlySnapshot(server, distribution, prefix, component) {
 
                 if (row.key == 'Distribution' && row.value == distribution && items['Prefix'] == prefix.tokenize(':').last() && items['Storage'] == storage) {
                     println ("items1: ${items} key ${row.key} value ${row.value}")
-                    return prefix
+                    for (source in items['Sources']){
+                        if (source['Component'] == component) {
+                            println ("X2: " + source['Name'])
+                            return source['Name']
+                        }
+                    }
                 }
             } else {
                 if (row.key == 'Distribution' && row.value == distribution && items['Prefix'] == prefix.tokenize(':').last() && items['Storage'] == '') {
                     println ("items2: ${items} key ${row.key} value ${row.value} sources " + items['Sources'])
                     for (source in items['Sources']){
-//                        println ("X1: ${source}")
                         if (source['Component'] == component) {
                             println ("X2: " + source['Name'])
+                            return source['Name']
                         }
-/*                        for (component in source) {
-                            println ("XXX ${component.key} YYY ${component.value} ZZZ ${component}")
-                        } */
                     }
-                    return prefix
                 }
             }
         }
     }
 
     return false
+}
+
+def snapshotPackages(server, snapshot) {
+    def pkgs = restGet(server, "/api/snapshots/${snapshot}/packages")
+
+    println ("PKGS: ${pkgs}")
+
+    return pkgs
+
 }
 
 def snapshotCreate(server, repo) {
@@ -197,7 +207,9 @@ node('python'){
             def ts = now.format('yyyyMMddHHmmss', TimeZone.getTimeZone('UTC'))
             distribution = "${DISTRIBUTION}-${ts}"
 
-            getnightlySnapshot(server, 'nightly', 'xenial', components)
+            def nightlySnapshot = getnightlySnapshot(server, 'nightly', 'xenial', components)
+
+            snapshotPackages(server, nightlySnapshot)
 
             for (prefix in prefixes) {
 /*                common.infoMsg("Checking ${distribution} is published for prefix ${prefix}")
