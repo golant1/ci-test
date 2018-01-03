@@ -253,8 +253,11 @@ node('python'){
         for (k in testBuilds.keySet()) {
             if (testBuilds[k].result != 'SUCCESS') {
                 notToPromote = true
+                common.errorMsg("${k} : " + testBuilds[k].result)
+            } else {
+                common.successMsg("${k} : " + testBuilds[k].result)
             }
-            println(k + ': ' + testBuilds[k].result)
+//            println(k + ': ' + testBuilds[k].result)
         }
 
 //        notToPromote = buildResult.find { openstackrelease, result -> result != 'SUCCESS' }
@@ -263,7 +266,7 @@ node('python'){
 
     stage('Promotion to testing repo'){
         if (notToPromote) {
-            echo 'Snapshot can not be promoted!!!'
+            common.errorMsg('Snapshot can not be promoted!!!')
             currentBuild.result = 'FAILURE'
         }
     }
