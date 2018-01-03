@@ -236,7 +236,7 @@ node('python'){
                         [$class: 'StringParameterValue', name: 'EXTRA_REPO_PIN', value: "release n=${distribution}"],
                         [$class: 'StringParameterValue', name: 'BOOTSTRAP_EXTRA_REPO_PARAMS', value: "deb [arch=amd64] http://${tmp_repo_node_name}/oscc-dev ${distribution} ${components},1300,release n=${distribution}"],
                         [$class: 'StringParameterValue', name: 'FORMULA_PKG_REVISION', value: 'stable'],
-                        [$class: 'BooleanParameterValue', name: 'STACK_DELETE', value: false],
+                        [$class: 'BooleanParameterValue', name: 'STACK_DELETE', value: true],
                         [$class: 'StringParameterValue', name: 'STACK_RECLASS_ADDRESS', value: STACK_RECLASS_ADDRESS],
                         [$class: 'StringParameterValue', name: 'STACK_RECLASS_BRANCH', value: "stable/${release}"],
                     ]
