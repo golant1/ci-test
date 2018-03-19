@@ -131,16 +131,22 @@ node(slave_node) {
                 saltMaster = salt.connection(SALT_MASTER_URL, SALT_MASTER_CREDENTIALS)
             }
         }
+                
+        if ((common.validInputParam('CFG_NODE') && CFG_NODE != TEST_TARGET)) {
+            test_target = CFG_NODE
+        } else {
+            test_target = TEST_TARGET
+        }
 
-        salt.runSaltProcessStep(saltMaster, TEST_TARGET, 'file.remove', ["${reports_dir}"])
-        salt.runSaltProcessStep(saltMaster, TEST_TARGET, 'file.mkdir', ["${reports_dir}"])
+        salt.runSaltProcessStep(saltMaster, test_target, 'file.remove', ["${reports_dir}"])
+        salt.runSaltProcessStep(saltMaster, test_target, 'file.mkdir', ["${reports_dir}"])
 
         if (common.checkContains('TEST_DOCKER_INSTALL', 'true')) {
-            test.install_docker(saltMaster, TEST_TARGET)
+            test.install_docker(saltMaster, test_target)
         }
 
         if (common.validInputParam('LOCAL_TEMPEST_IMAGE')) {
-            salt.cmdRun(saltMaster, TEST_TARGET, "docker load --input ${LOCAL_TEMPEST_IMAGE}", true, null, false)
+            salt.cmdRun(saltMaster, test_target, "docker load --input ${LOCAL_TEMPEST_IMAGE}", true, null, false)
         }
 
         // TODO: implement stepler testing from this pipeline
@@ -148,18 +154,13 @@ node(slave_node) {
 
             if (test_type == 'stepler'){
                 runSteplerTests(saltMaster, TEST_IMAGE,
-                    TEST_TARGET,
+                    test_target,
                     TEST_PATTERN,
                     '/home/stepler/tests_reports/',
                     '',
                     '/home/stepler/keystonercv3',
                     reports_dir)
             } else {
-                if ((common.validInputParam('CFG_NODE') && CFG_NODE != TEST_TARGET)) {
-                    test_target = CFG_NODE
-                } else {
-                    test_target = TEST_TARGET
-                }
 
                 if (common.validInputParam('TEST_SET')) {
                     test_set = TEST_SET
@@ -193,18 +194,18 @@ node(slave_node) {
                     TEST_CONF)
 
                 def tempest_stdout
-                tempest_stdout = salt.cmdRun(saltMaster, TEST_TARGET, "cat ${reports_dir}/report_${test_set}_*.log", true, null, false)['return'][0].values()[0].replaceAll('Salt command execution success', '')
+                tempest_stdout = salt.cmdRun(saltMaster, test_target, "cat ${reports_dir}/report_${test_set}_*.log", true, null, false)['return'][0].values()[0].replaceAll('Salt command execution success', '')
                 common.infoMsg('Short test report:')
                 common.infoMsg(tempest_stdout)
             }
         }
 
         stage('Archive rally artifacts') {
-            test.archiveRallyArtifacts(saltMaster, TEST_TARGET, reports_dir)
+            test.archiveRallyArtifacts(saltMaster, test_target, reports_dir)
         }
 
-        salt.runSaltProcessStep(saltMaster, TEST_TARGET, 'file.mkdir', ["${test_log_dir}"])
-        salt.runSaltProcessStep(saltMaster, TEST_TARGET, 'file.move', ["${reports_dir}", "${test_log_dir}/${PROJECT}-${date}"])
+        salt.runSaltProcessStep(saltMaster, test_target, 'file.mkdir', ["${test_log_dir}"])
+        salt.runSaltProcessStep(saltMaster, test_target, 'file.move', ["${reports_dir}", "${test_log_dir}/${PROJECT}-${date}"])
 
         stage('Processing results') {
             build(job: PROC_RESULTS_JOB, parameters: [
