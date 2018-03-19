@@ -137,8 +137,8 @@ node(slave_node) {
             test_target = TEST_TARGET
             cfg_node = CFG_NODE
         } else {
-            test_target = CFG_NODE
-            cfg_node = CFG_NODE
+            test_target = TEST_TARGET
+            cfg_node = TEST_TARGET
         }
 
         salt.runSaltProcessStep(saltMaster, test_target, 'file.remove', ["${reports_dir}"])
