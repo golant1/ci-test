@@ -178,13 +178,13 @@ node(slave_node) {
                     common.warningMsg('Cannot generate tempest config by runtest salt')
                 }
 
-                if ((common.validInputParam('CFG_NODE') && test_target != CFG_NODE) {
-                // copy required files to TEST_TARGET
-
-                }
+/*                if ((common.validInputParam('CFG_NODE') && test_target != CFG_NODE) {
+                    salt.runSaltProcessStep(pepperEnv, test_target, 'cp.get_dir', ["/root/${target}.${domain}.qcow2.bak", "/var/lib/libvirt/images/${target}.${domain}/system.qcow2"])
+                    salt.runSaltProcessStep(pepperEnv, test_target, 'cp.get_file', ["salt://root/keystonercv3", "/root/"])
+                } */
 
                 test.runTempestTests(saltMaster, TEST_IMAGE,
-                    TEST_TARGET,
+                    test_target,
                     test_pattern,
                     log_dir,
                     '/home/rally/keystonercv3',
