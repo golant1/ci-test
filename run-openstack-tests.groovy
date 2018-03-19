@@ -133,7 +133,7 @@ node(slave_node) {
         // Set up test_target parameter on cluster level
         if (common.validInputParam('TEST_TARGET')) {
             common.debugMsg("Set test_target parameter to ${TEST_TARGET} on cluster level")
-            runSaltProcessStep(saltMaster, 'I@salt:master', 'reclass.cluster_meta_set', [tempest_test_target, TEST_TARGET], false)
+            salt.runSaltProcessStep(saltMaster, 'I@salt:master', 'reclass.cluster_meta_set', ['tempest_test_target', TEST_TARGET], false)
         }
 
         salt.runSaltProcessStep(saltMaster, TEST_TARGET, 'file.remove', ["${reports_dir}"])
