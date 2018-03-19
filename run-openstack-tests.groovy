@@ -99,6 +99,7 @@ node(slave_node) {
     def test_milestone = ''
     def test_model = ''
     def test_target = ''
+    def cfg_node
     def venv = "${env.WORKSPACE}/venv"
     def test_concurrency = '0'
     def test_set = 'full'
@@ -133,9 +134,11 @@ node(slave_node) {
         }
                 
         if ((common.validInputParam('CFG_NODE') && CFG_NODE != TEST_TARGET)) {
-            test_target = CFG_NODE
-        } else {
             test_target = TEST_TARGET
+            cfg_node = CFG_NODE
+        } else {
+            test_target = CFG_NODE
+            cfg_node = CFG_NODE
         }
 
         salt.runSaltProcessStep(saltMaster, test_target, 'file.remove', ["${reports_dir}"])
@@ -173,16 +176,11 @@ node(slave_node) {
                     salt.enforceState(saltMaster, 'I@runtest:salttest', ['runtest.salttest'], true)
                 }
 
-                if (salt.testTarget(saltMaster, "I@runtest:tempest and ${test_target}")) {
-                    salt.enforceState(saltMaster, "I@runtest:tempest and ${test_target}", ['runtest'], true)
+                if (salt.testTarget(saltMaster, "I@runtest:tempest and ${cfg_node}")) {
+                    salt.enforceState(saltMaster, "I@runtest:tempest and ${cfg_node}", ['runtest'], true)
                 } else {
                     common.warningMsg('Cannot generate tempest config by runtest salt')
                 }
-
-/*                if ((common.validInputParam('CFG_NODE') && test_target != CFG_NODE) {
-                    salt.runSaltProcessStep(pepperEnv, test_target, 'cp.get_dir', ["/root/${target}.${domain}.qcow2.bak", "/var/lib/libvirt/images/${target}.${domain}/system.qcow2"])
-                    salt.runSaltProcessStep(pepperEnv, test_target, 'cp.get_file', ["salt://root/keystonercv3", "/root/"])
-                } */
 
                 test.runTempestTests(saltMaster, TEST_IMAGE,
                     test_target,
