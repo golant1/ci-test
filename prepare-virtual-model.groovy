@@ -15,7 +15,7 @@ if (common.validInputParam('SLAVE_NODE')) {
 node(slave_node) {
 
         venvPepper = "${workspace}/venvPepper"
-        python.setupPepperVirtualenv(venvPepper, 'http://172.17.48.91:6969', SALT_MASTER_CREDENTIALS)
+        python.setupPepperVirtualenv(venvPepper, SALT_MASTER_URL, SALT_MASTER_CREDENTIALS)
 
         
         stage("Adjust reclass classes in control nodes to run tests") {
