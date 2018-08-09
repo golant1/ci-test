@@ -2,7 +2,7 @@
 
 # Map hostnames of nodes and how it will be named for mcp
 declare -A hostnames
-hostnames=(["cz7935-kvm"]="kvm01.sriov-neutron.local" ["cz7936-kvm"]="kvm02.sriov-neutron.local" ["cz7937-kvm"]="gtw01.sriov-neutron.local" ["cz7903-kvm"]="cmp002.sriov-neutron.local" ["cz7904-kvm"]="cmp001.sriov-neutron.local")
+hostnames=(["cz7935-kvm"]="kvm01.sriov-neutron.local" ["cz7936-kvm"]="kvm02.sriov-neutron.local" ["cz7937-kvm"]="kvm03.sriov-neutron.local" ["cz7903-kvm"]="cmp002.sriov-neutron.local" ["cz7904-kvm"]="cmp001.sriov-neutron.local")
 
 # Install salt-minion
 apt-get install --yes salt-minion
