@@ -1,21 +1,21 @@
 #!/bin/bash
 
-resource_name_list='tenant1 tenant2'
+router_type_list='ha dvr legacy'
 n=1
+i=110
 
-echo "openstack network create public --provider-network-type flat --provider-physical-network physnet1 --external"
-echo "openstack subnet create --gateway 10.16.0.1 public 10.16.0.0/24"
+neutron router-create r_ha --ha=true
+openstack router create --distributed r_dvr
+neutron router-create r_legacy --ha=false
 
-for resource_name in $resource_name_list
+for router_type in $router_type_list
 do
-  echo "openstack network create $resource_name"
-  echo "openstack subnet create --dns-nameserver 8.8.8.8 $resource_name 192.168.${n}.0/24"
-  ((n++))
+  openstack network create network_tenant_${router_type}
+  openstack network create network_external_${router_type} --provider-network-type vxlan --provider-segment ${i} --external
+  openstack subnet create --dhcp network_external_${router_type}_subnet --network network_external_${router_type} --subnet-range 10.10.${i}.1/24 --gateway 10.10.${i}.1
+  subnet_tenant_ha=`openstack subnet create --dhcp tenant_${router_type}_subnet --network network_tenant_${router_type} --subnet-range 192.168.${i}.0/24 -c id -f value`
+  neutron router-gateway-set r_${router_type} network_external_${router_type}
+  neutron router-interface-add r_${router_type} ${subnet_tenant_ha}
+
+  ((i++))
 done
-
-#openstack network create
-#neutron net-create tenant1
-#neutron net-create tenant2
-#neutron subnet-create --dns-nameserver 8.8.8.8 tenant1 192.168.1.0/24
-#neutron net-create --shared --provider:network_type flat --provider:physical_network physnet1 --router:external=True ext
-
