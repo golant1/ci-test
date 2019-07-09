@@ -250,7 +250,8 @@ node('docker') {
 
         stage('Checkout component') {
 
-          checkoutGitRepositoryRefspec("${libsBasePath}/${PROJECT}", PROJECT_REPO, CREDENTIALS_ID, PROJECT_REFSPEC)
+//          checkoutGitRepositoryRefspec("${libsBasePath}/${PROJECT}", PROJECT_REPO, CREDENTIALS_ID, PROJECT_REFSPEC)
+          git.checkoutGitRepository("${libsBasePath}/${PROJECT}", PROJECT_REPO, PROJECT_REFSPEC, CREDENTIALS_ID)
 
           //Retrieve component sha
           dir("${libsBasePath}/${PROJECT}") {
@@ -312,7 +313,8 @@ node('docker') {
 
               common.infoMsg("Cloning extra project: ${extra_project} with refspec: ${extra_project_ref}")
 
-              checkoutGitRepositoryRefspec("${libsBasePath}/${extra_project}", extra_project_repo, CREDENTIALS_ID, extra_project_ref)
+//              checkoutGitRepositoryRefspec("${libsBasePath}/${extra_project}", extra_project_repo, CREDENTIALS_ID, extra_project_ref)
+              git.checkoutGitRepository("${libsBasePath}/${PROJECT}", extra_project_repo, extra_project_ref, CREDENTIALS_ID)
             }
             dockerArgs.add(2,"--build-arg EXTRA_PROJECTS='${extra_docker_args.join(' ')}'")
           }
