@@ -26,14 +26,29 @@
  *  }
  *
  *
+ * EXTRA_FILES - Text with yaml to create files from it in format:
+ *  etc/sources.list.d/99extra.list:
+ *    content: |
+ *      deb [trusted=yes] http://mirantis.repo.url
+ *  etc/trusted.gpg.d/extra.gpg:
+ *    content: |
+ *      dsdjefjejfejj==
+ *    encoding: Base64
 **/
 def gerrit = new com.mirantis.mk.Gerrit()
 def git = new com.mirantis.mk.Git()
 def common = new com.mirantis.mk.Common()
+def python = new com.mirantis.mk.Python()
 
 def builtImage
 def fullImageName
 def projectExtraRepo
+def projectRepoMapping
+def componentSha=''
+def extraFiles
+
+currentBuild.description = ''
+imageDetails = [(PROJECT):[:]]
 
 @NonCPS
 def checkoutGitRepositoryRefspec(project, project_repo, credentials, project_refspec, ref = 'master') {
@@ -67,7 +82,7 @@ def shouldNOTBePresentCommon = ['aodh', 'barbican', 'barbican-tempest-plugin', '
                                 'nova', 'octavia', 'octavia-dashboard', 'octavia-tempest-plugin', 'panko', 'python-brick-cinderclient-ext',
                                 'python-gnocchiclient', 'python-pankoclient', 'telemetry-tempest-plugin', 'tempest-horizon',
                                 'vmware-nsx', 'vmware-nsxlib', 'requirements', 'patrole', 'cinder-tempest-plugin',
-                                'cisbench', 'containerd', 'gerrit', 'influxdb-relay', 'jenkins', 'jmx-exporter', 'keystone-tempest-plugin',
+                                'cisbench', 'containerd', 'gerrit', 'influxdb-relay', 'jenkins', 'jmx-exporter', 'tempest', 'keystone-tempest-plugin',
                                 'libnetwork', 'libvirt-exporter', 'memcached', 'neutron-tempest-plugin', 'postgresql', 'prometheus-es-exporter',
                                 'prometheus-relay', 'rally', 'reclass', 'runc', 'salt-pepper', 'sf-notifier', 'telegraf', 'tini']
 
@@ -83,6 +98,40 @@ def customNameMapping = ['keystoneauth1' : 'keystoneauth',
                          'django-openstack-auth': 'django_openstack_auth']
 
 //def customNameMappingReverse = customNameMapping.collectEntries { e -> [(e.value): e.key] }
+
+def defaultRepoUrl = PROJECT_REPO.replace("/${PROJECT}",'')
+
+def projects_repo_mapping = """{'horizon': {'rocky': {'octavia-dashboard': {'repo': '${defaultRepoUrl}/octavia-dashboard', 'repo_ref': 'mcp/xenial/rocky'},
+                                                      'heat-dashboard': {'repo': '${defaultRepoUrl}/heat-dashboard','repo_ref': 'mcp/xenial/rocky'},
+                                                     },
+                                            'stein': {'octavia-dashboard': {'repo': '${defaultRepoUrl}/octavia-dashboard', 'repo_ref': 'mcp/stein'},
+                                                      'heat-dashboard': {'repo': '${defaultRepoUrl}/heat-dashboard','repo_ref': 'mcp/stein'},
+                                                     },
+                                            'queens': {'octavia-dashboard': {'repo': '${defaultRepoUrl}/octavia-dashboard', 'repo_ref': 'mcp/queens'},
+                                                       'heat-dashboard': {'repo': '${defaultRepoUrl}/heat-dashboard','repo_ref': 'mcp/queens'},
+                                                      },
+                                           },
+                               }"""
+
+if (common.validInputParam('PROJECT_REPO_MAPPING')) {
+  projectRepoMapping = readYaml text: PROJECT_REPO_MAPPING
+} else {
+  def project_repo_mapping_ = readYaml text: projects_repo_mapping
+  for (project_mapping in project_repo_mapping_.keySet()){
+    if (project_mapping == PROJECT) {
+      for (project_branch in project_repo_mapping_[project_mapping].keySet()) {
+        if (project_branch == PROJECT_REFSPEC.tokenize('/')[-1]) {
+          projectRepoMapping = project_repo_mapping_[project_mapping].get(project_branch)
+          common.infoMsg("projectRepoMapping: ${projectRepoMapping}")
+        }
+      }
+    }
+  }
+}
+
+if (common.validInputParam('EXTRA_FILES')) {
+  extraFiles = readYaml text: EXTRA_FILES
+}
 
 def GERRIT_HOST = env.GERRIT_HOST ?: 'gerrit.mcp.mirantis.com'
 
@@ -113,21 +162,24 @@ def getOpenStackDownstreamLibraries(gerritHost, credentialsId, branch, gerritPor
 
 
 /**
- * Update upper-constraints.txt to install downstreammed libraries.
+ * Update upper-constraints.txt to install downstreammed libraries. Two files are returned.
+ *   ['uc'] - upper-constraints.txt, patched file with downstream libraries installed from local folders
+ *   ['dev_uc'] - dev-upper-constraints.txt, patched file with downstream libraries pinned to dev versions (that were installed according to upper-constraints.txt)
  *
  * @param ucFile             The upper-constraints.txt file path.
  * @param downstreamProjects List of downstreammed projects.
  * @param customNameMapping  Transition name map between gerrit project and python library name.
  * @param libsBasePath       Base path for directory with libraries.
  * @param shouldBeIgnored    Libraries that should be ignored and are good to be not changed (include projects, tempest plugins, etc)
- * return                    Modified upper-constraints.txt
+ * return                    Map with modified upper-constraints.txt and dev-upper-constraints.txt
  * raises                    error when found not tracked local library.
 **/
-def applyDownstreamLibrariesUpperConstraints(ucFile, downstreamProjects, customNameMapping, libsBasePath, shouldBeIgnored){
+def applyDownstreamLibrariesUpperConstraints(ucFile, downstreamProjects, customNameMapping, libsBasePath, shouldBeIgnored, libDevVersions){
 
     def ucRaw = readFile ucFile
     def ucList = ucRaw.tokenize('\n')
     def resUC = ''
+    def resDevUC = ''
     def reqItem
     def reqName
     def reqVersion
@@ -140,19 +192,26 @@ def applyDownstreamLibrariesUpperConstraints(ucFile, downstreamProjects, customN
       reqVersion = reqItem[0].tokenize('===')[1]
       reqMeta = ''
 
+      if (reqName == 'tempest'){
+          continue
+      }
       if (reqItem.size() > 1) {
           reqMeta = reqItem[1]
       }
       if (reqName in downstreamProjects){
           intersectLibs.add(reqName)
           resUC += "file://${libsBasePath}/${reqName}#egg=${reqName}"
+          resDevUC += "${reqName}===${libDevVersions[reqName]}"
       } else if (reqName in customNameMapping.keySet()) {
           intersectLibs.add(reqName)
           resUC += "file://${libsBasePath}/${customNameMapping[reqName]}#egg=${reqName}"
+          resDevUC += "${reqName}===${libDevVersions[reqName]}"
       } else {
           resUC += "${item}"
+          resDevUC += "${item}"
       }
       resUC += '\n'
+      resDevUC += '\n'
     }
 
     // Check we don't have new dependencies that are not missed
@@ -160,7 +219,7 @@ def applyDownstreamLibrariesUpperConstraints(ucFile, downstreamProjects, customN
     if (missed) {
         error("Dependencies: ${missed} are present in downstream and not found in upper-constraints.txt")
     }
-    return resUC
+    return ['uc': resUC, 'dev_uc': resDevUC]
 }
 
 node('docker') {
@@ -172,11 +231,14 @@ node('docker') {
                                  '--pull',
                                  '.',]
     def upperConstraintsPatched
+    def upperConstraintsDevPatched
     fullImageName = "${DOCKER_REGISTRY}/${IMAGE_NAME}"
     def workspace = common.getWorkspace()
     def libsBasePath="${workspace}/data"
     def ucFile = "${libsBasePath}/requirements/upper-constraints.txt"
+    def ucDevFile = "${libsBasePath}/requirements/dev-upper-constraints.txt"
     def artifacts_dir = '_artifacts/'
+    def libDevVersions = [:]
 
 
     try {
@@ -190,6 +252,19 @@ node('docker') {
 
           checkoutGitRepositoryRefspec("${libsBasePath}/${PROJECT}", PROJECT_REPO, CREDENTIALS_ID, PROJECT_REFSPEC)
 
+          //Retrieve component sha
+          dir("${libsBasePath}/${PROJECT}") {
+            componentSha = git.getGitCommit()
+            currentBuild.description += "component_sha:" + componentSha + ';'
+          }
+
+          //Prepare image details
+          imageDetails[PROJECT]["tag"] = IMAGE_NAME.tokenize(":")[-1]
+          imageDetails[PROJECT]["url"] = "${DOCKER_REGISTRY}/${IMAGE_NAME}"
+          imageDetails[PROJECT]["origin"] = componentSha
+
+          writeYaml file: "${artifacts_dir}/image-metadata.yml", data: imageDetails
+
           if (PROJECT == "requirements"){
             def projects = getOpenStackDownstreamLibraries(GERRIT_HOST, CREDENTIALS_ID, PROJECT_REFSPEC)
             def repoBaseUrl = PROJECT_REPO.replace('/requirements','')
@@ -197,25 +272,43 @@ node('docker') {
             if (shouldNOTBePresentBranch.containsKey(PROJECT_REFSPEC)){
               shouldBeIgnored = shouldBeIgnored + shouldNOTBePresentBranch[PROJECT_REFSPEC]
             }
+
+            def venv = "${workspace}/venv"
+            python.setupVirtualenv("${workspace}/venv", 'python2', ['setuptools'])
+
             for (pr in projects - shouldBeIgnored) {
                 git.checkoutGitRepository("${libsBasePath}/${pr}", "${repoBaseUrl}/$pr", PROJECT_REFSPEC, CREDENTIALS_ID)
+                def lname
+                def lversion
+                dir("${libsBasePath}/${pr}") {
+                    lname = python.runVirtualenvCommand(venv, 'echo "$(python setup.py --name)"').trim()
+                    // os-vif repors os_vif here, but in upper-constraints and requirements os-vif is used
+                    if (lname == 'os_vif'){
+                      lname = 'os-vif'
+                    }
+                    lversion = python.runVirtualenvCommand(venv, 'echo "$(python setup.py --version)"').trim()
+                }
+                libDevVersions[lname] = lversion
             }
 
             // Use /tmp as base path as libraries will be placed to that container directory
-            upperConstraintsPatched = applyDownstreamLibrariesUpperConstraints(ucFile, projects, customNameMapping, '/tmp', shouldBeIgnored)
+            def ucs = applyDownstreamLibrariesUpperConstraints(ucFile, projects, customNameMapping, '/tmp', shouldBeIgnored, libDevVersions)
+            upperConstraintsPatched = ucs['uc']
+            upperConstraintsDevPatched = ucs['dev_uc']
             writeFile file: ucFile, text: upperConstraintsPatched
             writeFile file: "${artifacts_dir}/upper-constraints.txt", text: upperConstraintsPatched
+            writeFile file: ucDevFile, text: upperConstraintsDevPatched
+            writeFile file: "${artifacts_dir}/dev-upper-constraints.txt", text: upperConstraintsDevPatched
           }
 
-          if (common.validInputParam('PROJECT_REPO_MAPPING')) {
-            projectExtraRepo = readYaml text: PROJECT_REPO_MAPPING
+          if (projectRepoMapping) {
             def extra_docker_args = []
-            for (extra_project in projectExtraRepo.keySet()){
+            for (extra_project in projectRepoMapping.keySet()){
 
               extra_docker_args.add("/tmp/${extra_project}")
 
-              def extra_project_repo = projectExtraRepo[extra_project].get('repo')
-              def extra_project_ref = projectExtraRepo[extra_project].get('repo_ref')
+              def extra_project_repo = projectRepoMapping[extra_project].get('repo')
+              def extra_project_ref = projectRepoMapping[extra_project].get('repo_ref')
 
               common.infoMsg("Cloning extra project: ${extra_project} with refspec: ${extra_project_ref}")
 
@@ -226,13 +319,26 @@ node('docker') {
 
         }
 
+        stage('Add extra files from EXTRA_FILES param') {
+          if (extraFiles) {
+            for (f in extraFiles.keySet()){
+              content = extraFiles[f]['content']
+              encoding = extraFiles[f]['encoding']
+              if (encoding) {
+                writeFile file: f, text: content, encoding: encoding
+              } else {
+                writeFile file: f, text: content
+              }
+            }
+          }
+        }
 
         stage('Build Image') {
           // NOTE(vsaienko) unless issue https://issues.jenkins-ci.org/browse/JENKINS-46105 is fixed build image
           // with shell command.
           sh("docker build -t ${fullImageName}  ${dockerArgs.join(' ')}")
           builtImage = docker.image("${fullImageName}")
-          currentBuild.description += "<p>Image Name: <b>${fullImageName}</b></p>"
+          currentBuild.description += "image_name:" + fullImageName + ';'
         }
 
         stage('Push Image') {
@@ -259,5 +365,4 @@ node('docker') {
         }
     }
 }
-
 
